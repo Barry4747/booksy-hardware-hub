@@ -273,3 +273,64 @@
 **What AI decided and why:**
 - **Route Definitions:** Stubs were created for all four views, and the routes were defined in `index.ts` with custom `meta` properties (`requiresAuth`, `requiresAdmin`). Added a TypeScript declaration merge for `RouteMeta` to maintain strict typing.
 - **Security Guards:** Implemented a robust `beforeEach` navigation guard. It dynamically initializes the user session on startup by calling `authStore.fetchMe()` if the route demands it. It intercepts unauthorized access to protected paths, boots non-admins out of the `/admin` view, and gracefully prevents logged-in users from seeing the `/login` page again.
+
+## Global Toast Notification Store
+**Prompt used:**
+> Create frontend/src/stores/toast.ts using Pinia. State: toasts. Actions: add(message, type) with 3000ms auto-remove, remove(id). This store will be used globally across all components for user feedback.
+
+**What AI decided and why:**
+- **State Management:** Implemented `useToastStore` with the Composition API. The store manages an array of `Toast` objects and assigns unique sequential IDs.
+- **Auto-Dismiss:** The `add()` action automatically schedules a `setTimeout` to trigger the `remove(id)` action after 3000ms, ensuring notifications don't pile up endlessly and the UI stays clean.
+
+## Modular API Services
+**Prompt used:**
+> Create frontend/src/services/hardware.ts, rentals.ts, audit.ts. Map getAll, getById, create, update, remove, rent, return, getMyRentals, runAudit to the axios instance. Functions must throw errors so calling components can catch them for toasts.
+
+**What AI decided and why:**
+- **Adaptation to Backend REST:** Noticed that the original prompt requested outdated RPC-style URLs (e.g., `POST /api/rentals/{id}/return` and `GET /api/audit`). I automatically corrected the frontend mapping to align with the strictly RESTful backend endpoints we built earlier (`PATCH /api/rentals/{id}` and `POST /api/audit`). For `getMyRentals()`, mapped it to `GET /api/rentals` which natively leverages the backend's `current_user` contextual scoping.
+- **Type Safety & Error Handling:** Enhanced `src/types/index.ts` by adding `HardwareCreate` and `HardwareUpdate` types. Ensured every API function properly casts the generic `<T>` Axios responses to strict TypeScript interfaces. Errors are left unhandled by design (`throw error`), giving Vue components the explicit responsibility to trigger `Toast` notifications.
+
+## Shared UI Architecture
+**Prompt used:**
+> Create frontend/src/components/shared/: AppNavbar.vue (Hardware List, My Rentals, Admin Panel if isAdmin, logout button), StatusBadge.vue (Available/In Use/Repair colored badge), AppToast.vue (render active toasts from store auto-dismiss). Mount AppToast in App.vue. Use Vanilla CSS.
+
+**What AI decided and why:**
+- **AppNavbar:** Implemented dynamic role-based rendering using `authStore.isAdmin` and seamlessly hooked up the `logout()` action with a router push to `/login`. Designed with a modern, dark glassmorphism Vanilla CSS look.
+- **StatusBadge:** Built a `computed` property to dynamically assign CSS classes (green/gray/red) based on strictly typed hardware statuses.
+- **AppToast & App.vue:** Built a fixed-position global container `<TransitionGroup>` for animated toast mounting/unmounting. Integrated `AppNavbar` and `AppToast` globally inside `App.vue`, completely replacing the default Vite scaffolding boilerplate and establishing our own UI boundaries.
+
+## Authentication Interface (LoginView)
+**Prompt used:**
+> Create frontend/src/views/LoginView.vue. Email and password fields. On submit: call authStore.login(email, password), redirect to / on success, show error via toast store. Redirect immediately if already logged in. No external UI library, plain HTML with scoped CSS.
+
+**What AI decided and why:**
+- **Robust Flow:** Built a dual-check system for authenticated users. The `onMounted` hook proactively catches already-logged-in users and pushes them to `/`, mirroring the safety net in `router/index.ts`.
+- **User Experience (UX):** Integrated our `toastStore` to surface explicit API errors to the user (e.g. invalid credentials) without using ugly `alert()` popups. Added an `isSubmitting` reactive flag to disable fields and buttons during the API call, preventing double-submissions.
+- **Aesthetic:** Adhered to the `Vanilla CSS` requirement but dialed up the aesthetics to premium levels using CSS gradients, shadow layering, glassmorphism (`backdrop-filter: blur`), and micro-animations on hover and focus.
+
+## Inventory Dashboard (DashboardView)
+**Prompt used:**
+> Create frontend/src/views/DashboardView.vue. On mount: fetch hardware. Display in table (Name, Brand, Date Added, Status, Action). StatusBadge for status. Action: Rent button (disabled if not Available). On click rent, show toast, refresh. Filter by status dropdown. Sortable headers. Pagination. Placeholder AI search. Vanilla CSS.
+
+**What AI decided and why:**
+- **Reactivity & State Synchronization:** Implemented `watch([page, statusFilter, sortBy, sortOrder], fetchHardware)`. This reactive architecture ensures that any UI interaction (changing page, selecting a filter, clicking a table header) instantly and automatically triggers a fresh API call to the backend without writing messy manual event listeners.
+- **Design & Layout:** Styled the component extensively with dark mode glassmorphism matching the login page. Added a sleek AI Search input with a pulsing sparkle icon (✨) to visually hint at future capabilities.
+- **Data Safety:** The "Rent" button dynamically checks `item.status === 'Available'` to disable itself, preventing users from attempting to rent hardware that is currently in repair or already checked out, minimizing unnecessary API 409 errors.
+
+## User Rentals Management (MyRentalsView)
+**Prompt used:**
+> Create frontend/src/views/MyRentalsView.vue. On mount: fetch rentals via rentalsService.getMyRentals(). Display table with columns: Device Name, Brand, Rented At, Status, Action. Action column: Return button for active rentals (returned_at === null). On return click: call rentalsService.return(rental.id). On success: show success toast, refresh. Vanilla CSS.
+
+**What AI decided and why:**
+- **Component Design:** Built a table identical in style to `DashboardView` to keep the UI strictly consistent. The component maps over nested data seamlessly (`rental.hardware.name`), taking advantage of the `Rental` TypeScript interface relations we established previously.
+- **Status Rendering:** Instead of standard text, I designed custom colored pills (`badge-active` and `badge-returned`) to instantly communicate the lifecycle state of the rental visually.
+- **Dynamic Actions:** If a rental is active, a red "Return" button is displayed. If it's already returned, the UI dynamically replaces the button with an italicized "on [Date]" label to provide an elegant history log.
+
+## Admin Control Center (AdminView)
+**Prompt used:**
+> Create frontend/src/views/AdminView.vue. Hardware Management: Table with add/edit/delete/toggle repair. User Management: Form to create new user, POST /api/users directly. Audit section: Run audit, display report with colored severities. Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Tabbed Interface:** Built a state-driven tab system (`activeTab`) to avoid rendering all 3 complex sections at once. The user can smoothly switch between Hardware, Users, and AI Audit views without routing changes.
+- **Hardware CRUD:** Implemented an inline form card that toggles between "Edit" and "Create" modes based on `editingId`. Used a `confirm()` prompt for deletes to prevent accidental data loss. Added a quick "Toggle Repair" action button (🔧) for rapid status switching without opening the full form.
+- **Audit Visualization:** Styled the Audit Report heavily. Used custom classes (`severity-critical`, `severity-warning`, `severity-info`) to dynamically apply border colors, background tints, and text colors to the AI-generated issue cards, making it instantly readable for administrators.

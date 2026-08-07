@@ -15,6 +15,9 @@ export interface Hardware {
   created_at: string
 }
 
+export type HardwareCreate = Omit<Hardware, 'id' | 'created_at' | 'status'> & { status?: Hardware['status'] }
+export type HardwareUpdate = Partial<HardwareCreate>
+
 export interface Rental {
   id: number
   hardware_id: number
