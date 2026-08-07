@@ -31,3 +31,4 @@
 * **Router Security:** Vue Router global `beforeEach` guards ensure protected routes (`/`, `/rentals`, `/admin`) verify authorization on navigation, dynamically fetching user sessions on load.
 * **Global Notifications:** Pinia composition API Toast Store for standardized, auto-dismissible user feedback messages across the UI.
 * **API Service Layer:** Isolated API wrapper functions (`hardware.ts`, `rentals.ts`, `audit.ts`) neatly map to FastAPI endpoints, returning fully typed TypeScript responses and throwing errors upward for Vue components to handle seamlessly.
+* **Shared UI Architecture:** Reusable Vanilla CSS components (`AppNavbar`, `AppToast`, `StatusBadge`) providing dynamic layout, role-based navigation rendering, and visual state representation for the entire application.

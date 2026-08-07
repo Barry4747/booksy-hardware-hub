@@ -289,3 +289,12 @@
 **What AI decided and why:**
 - **Adaptation to Backend REST:** Noticed that the original prompt requested outdated RPC-style URLs (e.g., `POST /api/rentals/{id}/return` and `GET /api/audit`). I automatically corrected the frontend mapping to align with the strictly RESTful backend endpoints we built earlier (`PATCH /api/rentals/{id}` and `POST /api/audit`). For `getMyRentals()`, mapped it to `GET /api/rentals` which natively leverages the backend's `current_user` contextual scoping.
 - **Type Safety & Error Handling:** Enhanced `src/types/index.ts` by adding `HardwareCreate` and `HardwareUpdate` types. Ensured every API function properly casts the generic `<T>` Axios responses to strict TypeScript interfaces. Errors are left unhandled by design (`throw error`), giving Vue components the explicit responsibility to trigger `Toast` notifications.
+
+## Shared UI Architecture
+**Prompt used:**
+> Create frontend/src/components/shared/: AppNavbar.vue (Hardware List, My Rentals, Admin Panel if isAdmin, logout button), StatusBadge.vue (Available/In Use/Repair colored badge), AppToast.vue (render active toasts from store auto-dismiss). Mount AppToast in App.vue. Use Vanilla CSS.
+
+**What AI decided and why:**
+- **AppNavbar:** Implemented dynamic role-based rendering using `authStore.isAdmin` and seamlessly hooked up the `logout()` action with a router push to `/login`. Designed with a modern, dark glassmorphism Vanilla CSS look.
+- **StatusBadge:** Built a `computed` property to dynamically assign CSS classes (green/gray/red) based on strictly typed hardware statuses.
+- **AppToast & App.vue:** Built a fixed-position global container `<TransitionGroup>` for animated toast mounting/unmounting. Integrated `AppNavbar` and `AppToast` globally inside `App.vue`, completely replacing the default Vite scaffolding boilerplate and establishing our own UI boundaries.
