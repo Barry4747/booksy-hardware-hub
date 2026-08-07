@@ -51,3 +51,15 @@
   `None, False` for completely unrecognized formats, silently discarding the anomaly. 
   I added a third case that returns `None, True` so the anomaly counter increments and 
   the issue is logged.
+
+## Security Implementation
+**Prompt used:**
+> In backend/app/core/security.py implement Password hashing and verification using passlib bcrypt, JWT access token creation and decoding using python-jose, JWT refresh token creation and decoding. Read SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS from app/core/config.py (pydantic-settings). Use python-jose, not PyJWT. Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Security Utilities (app/core/security.py):** Implemented all requested JWT operations (`create_access_token`, `create_refresh_token`, `decode_token`) using `python-jose` as specified. Also set up `CryptContext` from `passlib` to hash and verify passwords using bcrypt.
+- **Config check:** Verified that `config.py` correctly uses `pydantic-settings` to load the variables from the `.env` file (which you already implemented beautifully!).
+- **Admin Script Refactoring:** Updated `create_admin.py` to import `get_password_hash` directly from `security.py`, adhering to DRY principles.
+
+**Any correction I had to make:**
+- **`datetime.utcnow()` deprecation:** Replaced `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)` when calculating token expiration. `utcnow()` is deprecated in Python 3.12+ and using timezone-aware objects is a more robust practice for JWT tokens.

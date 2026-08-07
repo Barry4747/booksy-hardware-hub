@@ -4,14 +4,9 @@ import getpass
 from app.db.base import SessionLocal, engine
 from app.models import Base
 from app.models.user import User
-from passlib.context import CryptContext
+from app.core.security import get_password_hash
 
 Base.metadata.create_all(bind=engine)
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
 
 def main():
     email = os.environ.get("ADMIN_EMAIL")
