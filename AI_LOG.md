@@ -188,3 +188,41 @@
 
 **Any correction I had to make:**
 - No corrections were necessary.
+
+## Rental Repository
+**Prompt used:**
+> lets move to rentals. add rental repository with flush pattern. act as a senior dev. remember to update md files
+
+**What AI decided and why:**
+- **`RentalRepository` (`app/repositories/rentals.py`):** Extended our repository pattern to the `Rental` domain. Retained the standard CRUD implementations along with robust filtering and sorting, ensuring that the same interface design remains uniform across all domains in the application.
+- **Data relations:** Integrated tests in `tests/test_rental_repository.py` where instances of `Hardware` and `User` must be seeded first due to foreign-key constraints on `Rental`'s `hardware_id` and `user_id`.
+- **Flush Pattern:** Consistently used `self.db.flush()` inside mutations, allowing the service layer to control the final `commit()`.
+
+**Any correction I had to make:**
+- No corrections were necessary.
+
+## Rental Service
+**Prompt used:**
+> Implicit continuation for building RentalService
+
+**What AI decided and why:**
+- **`RentalService` (`app/services/rentals.py`):** Implemented the core business logic orchestrator that binds Users to Hardware. The `create_rental` method validates hardware existence and availability before creating the rental record and flipping the hardware status to `IN_USE` in a single transaction. The `return_rental` method reverses this by adding a `returned_at` timestamp and reverting the hardware status to `AVAILABLE`.
+- **Exception Handling:** Added `HardwareUnavailableError` (409 Conflict) and `RentalNotFoundError` (404 Not Found) to specifically handle common domain constraints natively in FastAPI.
+- **Testing (`tests/test_rental_service.py`):** Replicated 100% test coverage including all unhappy paths (attempting to rent a non-existent or already-rented device) and boundary cases (returning a device multiple times).
+
+**Any correction I had to make:**
+- No corrections were necessary.
+
+## Rental Router
+**Prompt used:**
+> Implicit continuation for building Rental Router
+
+**What AI decided and why:**
+- **Endpoints (`app/api/routers/rentals.py`):** Created endpoints for listing (`GET /api/rentals`), viewing (`GET /api/rentals/{id}`), renting (`POST /api/rentals`), and returning (`POST /api/rentals/{id}/return`). 
+- **Authentication:** All rental endpoints rely on the `get_current_user` dependency. Any authenticated employee can rent hardware or return it, and their `user_id` is automatically extracted from the JWT token (so they cannot spoof renting as someone else).
+- **Testing (`tests/test_rental_endpoints.py`):** Added integration tests mapping the real world flow: Admin creates hardware -> User logs in -> User rents hardware (HTTP 201) -> Hardware status turns to `IN_USE` -> User returns hardware (HTTP 200) -> Hardware returns to `AVAILABLE`. Coverage preserved at 100%.
+
+**Any correction I had to make:**
+- **RESTful standard compliance:** Initially, returning a device was implemented as a shortcut using `POST /api/rentals/{id}/return` which violated REST principles (using verbs in resource URLs). In addition, AI used a shortcut in the `PATCH` endpoint to simply call `return_rental`. Based on code-review, I replaced the RPC-like endpoint and the shortcut with a robust `PATCH /api/rentals/{id}` endpoint. I introduced a proper `RentalUpdate` schema and a fully capable `update_rental` method in the `RentalService`. The service now checks if `returned_at` transitions from `None` to a timestamp, automatically freeing the hardware in the process, making it much more robust and compliant with typical REST PATCH semantics.
+- **Code cleanliness:** Removed ugly inline imports of `HTTPException` inside routers and tests. Instead, I correctly wired it to use our existing custom application exceptions (like `NotEnoughPrivilegesError`) registered globally, strictly separating the business and HTTP logic and cleaning up the header imports according to PEP 8.
+- **Data Privacy & Security:** Fixed a major logic flaw where `GET /api/rentals` and `GET /api/rentals/{id}` were returning all rentals to any authenticated user. Regular users are now restricted to seeing only their own rentals, returning a `403 Forbidden` if they try to access someone else's. Admins retain full visibility.

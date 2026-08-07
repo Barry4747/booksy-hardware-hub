@@ -14,6 +14,8 @@
 - Admin Users Router (`app/api/routers/users.py`)
 - Hardware Layer (`app/repositories/hardware.py`, `app/services/hardware.py`)
 - Hardware Router (`app/api/routers/hardware.py`)
+- Rental Layer (`app/repositories/rentals.py`, `app/services/rentals.py`)
+- Rental Router (`app/api/routers/rentals.py`)
 - Custom exception handling (`app/exceptions/auth.py`, `app/exceptions/users.py`)
 - Unit and integration test suite (`tests/` with 99% coverage)
 

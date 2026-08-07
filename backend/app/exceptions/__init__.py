@@ -14,6 +14,11 @@ from .hardware import (
     HardwareError,
     HardwareNotFoundError,
 )
+from .rentals import (
+    RentalError,
+    RentalNotFoundError,
+    HardwareUnavailableError,
+)
 
 __all__ = [
     "AuthError",
@@ -26,4 +31,7 @@ __all__ = [
     "UserAlreadyExistsError",
     "HardwareError",
     "HardwareNotFoundError",
+    "RentalError",
+    "RentalNotFoundError",
+    "HardwareUnavailableError",
 ]
