@@ -13,3 +13,9 @@ jobs:
         working-directory: backend
       - run: uv run python -m pytest tests/ -v --cov=app
         working-directory: backend
+        env:
+          SECRET_KEY: "test_secret_key"
+          ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+          REFRESH_TOKEN_EXPIRE_DAYS: "7"
+          GEMINI_API_KEY: "dummy_key"

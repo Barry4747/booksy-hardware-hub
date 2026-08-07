@@ -125,3 +125,4 @@
 **Any correction I had to make:**
 - **Passlib bug:** As mentioned above, swapped `passlib` for pure `bcrypt`.
 - **TestClient Cookies:** The test client was initially rejecting secure cookies because it defaults to `http://testserver`. Fixed by enforcing HTTPS at the client level.
+- **CI Environment Variables:** The GitHub Actions CI pipeline failed to run the tests because `pydantic-settings` strictly validates required configuration variables (`SECRET_KEY`, `ALGORITHM`, etc.) that are normally loaded from `.env`. Added dummy values directly into the `env` block of the pytest step in `tests.yml`.
