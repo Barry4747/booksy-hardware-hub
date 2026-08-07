@@ -98,3 +98,15 @@
 - **Refactored `get_current_user`:** Moved this function out of `core.py` and into the newly created `app/api/dependencies/auth.py`. This improves separation of concerns — `core.py` handles general DI (like DB and services), while `auth.py` strictly manages request-level authentication states.
 - **Created `require_admin`:** Implemented a new dependency relying on `Depends(get_current_user)` that evaluates the `is_admin` boolean flag. This provides an elegant, reusable way to secure admin-only routes natively within FastAPI.
 - **Updated routers:** Re-wired `auth.py` router to import the relocated `get_current_user` dependency from the correct module without disrupting its functionality.
+
+## Custom Exceptions
+**Prompt used:**
+> Create an exceptions folder and extract necessary custom exceptions into it. Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Exceptions Module (`app/exceptions/auth.py`):** Created a dedicated exceptions directory and defined semantic custom errors extending `AuthError` (e.g., `InvalidCredentialsError`, `TokenMissingError`, `UserNotFoundError`). 
+- **Layer Clean-up:** Replaced hardcoded `fastapi.HTTPException` instances inside `app/services/auth.py` and `app/api/dependencies/auth.py` with these custom exceptions. This aligns with Clean Architecture, as business and dependency logic shouldn't directly raise HTTP protocol exceptions.
+- **Global Exception Handler (`app/main.py`):** Registered a global `@app.exception_handler(AuthError)` in FastAPI so that whenever the core logic raises an `AuthError`, FastAPI automatically translates it back to a clean JSONResponse with the correct HTTP status code and headers.
+
+**Any correction I had to make:**
+- No corrections were necessary.

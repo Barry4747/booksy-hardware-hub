@@ -1,4 +1,5 @@
-from fastapi import HTTPException, status, Response
+from fastapi import Response
+from app.exceptions.auth import InvalidCredentialsError, TokenMissingError, InvalidTokenError, UserNotFoundError
 from sqlalchemy.orm import Session
 from app.repositories.users import UserRepository
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token
@@ -13,11 +14,7 @@ class AuthService:
     def login(self, email: str, password: str, response: Response) -> UserResponse:
         user = self.user_repo.get_by_email(email)
         if not user or not verify_password(password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise InvalidCredentialsError()
         
         access_token = create_access_token(subject=user.id)
         refresh_token = create_refresh_token(subject=user.id)
@@ -47,19 +44,19 @@ class AuthService:
 
     def refresh(self, refresh_token: str, response: Response) -> UserResponse:
         if not refresh_token:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing")
+            raise TokenMissingError(detail="Refresh token missing")
             
         try:
             payload = decode_token(refresh_token)
             if payload.get("type") != "refresh":
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+                raise InvalidTokenError(detail="Invalid token type")
             user_id = int(payload.get("sub"))
         except Exception:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+            raise InvalidTokenError()
             
         user = self.user_repo.get_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise UserNotFoundError()
             
         access_token = create_access_token(subject=user.id)
         
