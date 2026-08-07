@@ -33,3 +33,4 @@
 * **API Service Layer:** Isolated API wrapper functions (`hardware.ts`, `rentals.ts`, `audit.ts`) neatly map to FastAPI endpoints, returning fully typed TypeScript responses and throwing errors upward for Vue components to handle seamlessly.
 * **Shared UI Architecture:** Reusable Vanilla CSS components (`AppNavbar`, `AppToast`, `StatusBadge`) providing dynamic layout, role-based navigation rendering, and visual state representation for the entire application.
 * **Authentication UI:** A highly polished, dynamic `LoginView` offering responsive error handling and redirection, seamlessly integrated with the Pinia Auth Store and Axios interceptors.
+* **Inventory Dashboard:** A robust `DashboardView` with real-time server-side pagination, sorting, status filtering, and one-click hardware renting wrapped in a modern, dark-themed glassmorphism UI.

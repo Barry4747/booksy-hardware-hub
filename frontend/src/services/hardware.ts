@@ -2,7 +2,15 @@ import api from './api'
 import type { Hardware, HardwareCreate, HardwareUpdate, PaginatedResponse } from '../types'
 
 export async function getAll(params: { page?: number, limit?: number, status?: string, sort_by?: string, sort_order?: string } = {}) {
-  const { data } = await api.get<PaginatedResponse<Hardware>>('/api/hardware', { params })
+  const skip = ((params.page || 1) - 1) * (params.limit || 10)
+  const query = {
+    skip,
+    limit: params.limit,
+    status: params.status,
+    sort_by: params.sort_by,
+    sort_desc: params.sort_order === 'desc'
+  }
+  const { data } = await api.get<Hardware[]>('/api/hardware', { params: query })
   return data
 }
 

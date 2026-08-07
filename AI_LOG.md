@@ -307,3 +307,12 @@
 - **Robust Flow:** Built a dual-check system for authenticated users. The `onMounted` hook proactively catches already-logged-in users and pushes them to `/`, mirroring the safety net in `router/index.ts`.
 - **User Experience (UX):** Integrated our `toastStore` to surface explicit API errors to the user (e.g. invalid credentials) without using ugly `alert()` popups. Added an `isSubmitting` reactive flag to disable fields and buttons during the API call, preventing double-submissions.
 - **Aesthetic:** Adhered to the `Vanilla CSS` requirement but dialed up the aesthetics to premium levels using CSS gradients, shadow layering, glassmorphism (`backdrop-filter: blur`), and micro-animations on hover and focus.
+
+## Inventory Dashboard (DashboardView)
+**Prompt used:**
+> Create frontend/src/views/DashboardView.vue. On mount: fetch hardware. Display in table (Name, Brand, Date Added, Status, Action). StatusBadge for status. Action: Rent button (disabled if not Available). On click rent, show toast, refresh. Filter by status dropdown. Sortable headers. Pagination. Placeholder AI search. Vanilla CSS.
+
+**What AI decided and why:**
+- **Reactivity & State Synchronization:** Implemented `watch([page, statusFilter, sortBy, sortOrder], fetchHardware)`. This reactive architecture ensures that any UI interaction (changing page, selecting a filter, clicking a table header) instantly and automatically triggers a fresh API call to the backend without writing messy manual event listeners.
+- **Design & Layout:** Styled the component extensively with dark mode glassmorphism matching the login page. Added a sleek AI Search input with a pulsing sparkle icon (✨) to visually hint at future capabilities.
+- **Data Safety:** The "Rent" button dynamically checks `item.status === 'Available'` to disable itself, preventing users from attempting to rent hardware that is currently in repair or already checked out, minimizing unnecessary API 409 errors.
