@@ -27,3 +27,5 @@
 * **Audit System (AI-ready):** A reporting engine that flags potential inventory issues, preparing the codebase for a future AI/LLM integration.
 * **Frontend:** Vue 3, TypeScript, Vite, Vue Router, Pinia, Axios.
 * **Type Safety:** Shared TypeScript interfaces matching the backend Pydantic schemas for end-to-end safety.
+* **Secure Auth (HttpOnly):** Automated Axios interceptors handle seamless background JWT token refreshing without exposing tokens to JavaScript. Pinia composition API store handles the UI authentication state (`user`, `isAdmin`).
+* **Router Security:** Vue Router global `beforeEach` guards ensure protected routes (`/`, `/rentals`, `/admin`) verify authorization on navigation, dynamically fetching user sessions on load.

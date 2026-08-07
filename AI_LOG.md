@@ -247,3 +247,29 @@
 
 **What AI decided and why:**
 - **TypeScript Definitions:** Created `frontend/src/types/index.ts` with `User`, `Hardware`, `Rental`, `AuditIssue`, `AuditReport` and `PaginatedResponse<T>` interfaces exactly matching the backend schema. This ensures end-to-end type safety between the FastAPI backend and Vue frontend, facilitating clean autocomplete and preventing runtime errors before they occur.
+
+## Axios API Service (Secure HttpOnly Auth)
+**Prompt used:**
+> Create frontend/src/services/api.ts
+> Requirements: Create axios instance with baseURL from import.meta.env.VITE_API_BASE_URL. Set withCredentials: true. Add response interceptor that handles 401 errors: 1. On 401, attempt POST /api/auth/refresh 2. If refresh succeeds, retry the original request once 3. If refresh fails, clear local user state and redirect to /login. Do not add Authorization headers. Export the axios instance as default.
+
+**What AI decided and why:**
+- **Setup:** Configured the `axios` instance globally with `withCredentials: true` to ensure browsers automatically attach the secure `HttpOnly` JWT cookies to every outgoing request, meeting the architecture's security requirements.
+- **Refresh Flow:** Built a robust response interceptor. When an API call returns a `401 Unauthorized`, the interceptor pauses the call, silently attempts a token refresh by calling `/api/auth/refresh`, and if successful, seamlessly replays the original request. If the refresh also fails (meaning the refresh token has expired or is invalid), the user is securely punted to the `/login` route.
+
+## Pinia Auth Store (Composition API)
+**Prompt used:**
+> Create frontend/src/stores/auth.ts using Pinia composition API style. State: user, isLoading. Actions: login, logout, fetchMe, isAdmin computed. Use axios instance. Do not store tokens.
+
+**What AI decided and why:**
+- **State Management:** Implemented the `useAuthStore` using the modern Composition API pattern (with `ref` and `computed`). This seamlessly integrates with the Vue 3 reactivity system.
+- **Security:** In strict adherence to the HttpOnly architecture, the store relies purely on the server's HTTP responses (via the Axios instance) to verify identity, without ever touching local storage or parsing tokens on the client.
+- **Dynamic Interceptor Integration:** Updated the previously built `api.ts` to dynamically import `useAuthStore` so it securely clears the local user state (`authStore.user = null`) if an automatic background token refresh fails.
+
+## Vue Router Configuration & Navigation Guards
+**Prompt used:**
+> Configure frontend/src/router/index.ts with routes: /login -> LoginView, / -> DashboardView, /admin -> AdminView, /rentals -> MyRentalsView. Add a global beforeEach guard that calls authStore.fetchMe() and handles redirects based on auth and admin requirements. Use meta fields.
+
+**What AI decided and why:**
+- **Route Definitions:** Stubs were created for all four views, and the routes were defined in `index.ts` with custom `meta` properties (`requiresAuth`, `requiresAdmin`). Added a TypeScript declaration merge for `RouteMeta` to maintain strict typing.
+- **Security Guards:** Implemented a robust `beforeEach` navigation guard. It dynamically initializes the user session on startup by calling `authStore.fetchMe()` if the route demands it. It intercepts unauthorized access to protected paths, boots non-admins out of the `/admin` view, and gracefully prevents logged-in users from seeing the `/login` page again.
