@@ -273,3 +273,11 @@
 **What AI decided and why:**
 - **Route Definitions:** Stubs were created for all four views, and the routes were defined in `index.ts` with custom `meta` properties (`requiresAuth`, `requiresAdmin`). Added a TypeScript declaration merge for `RouteMeta` to maintain strict typing.
 - **Security Guards:** Implemented a robust `beforeEach` navigation guard. It dynamically initializes the user session on startup by calling `authStore.fetchMe()` if the route demands it. It intercepts unauthorized access to protected paths, boots non-admins out of the `/admin` view, and gracefully prevents logged-in users from seeing the `/login` page again.
+
+## Global Toast Notification Store
+**Prompt used:**
+> Create frontend/src/stores/toast.ts using Pinia. State: toasts. Actions: add(message, type) with 3000ms auto-remove, remove(id). This store will be used globally across all components for user feedback.
+
+**What AI decided and why:**
+- **State Management:** Implemented `useToastStore` with the Composition API. The store manages an array of `Toast` objects and assigns unique sequential IDs.
+- **Auto-Dismiss:** The `add()` action automatically schedules a `setTimeout` to trigger the `remove(id)` action after 3000ms, ensuring notifications don't pile up endlessly and the UI stays clean.
