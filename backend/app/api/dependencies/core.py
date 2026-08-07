@@ -8,6 +8,7 @@ from app.services.auth import AuthService
 from app.services.users import UserService
 from app.services.hardware import HardwareService
 from app.services.rentals import RentalService
+from app.services.audit import AuditService
 
 def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
@@ -42,3 +43,9 @@ def get_rental_service(
     hw_repo: HardwareRepository = Depends(get_hardware_repository)
 ) -> RentalService:
     return RentalService(db=db, rental_repo=rental_repo, hw_repo=hw_repo)
+
+def get_audit_service(
+    db: Session = Depends(get_db),
+    hw_repo: HardwareRepository = Depends(get_hardware_repository)
+) -> AuditService:
+    return AuditService(db=db, hw_repo=hw_repo)
