@@ -325,3 +325,12 @@
 - **Component Design:** Built a table identical in style to `DashboardView` to keep the UI strictly consistent. The component maps over nested data seamlessly (`rental.hardware.name`), taking advantage of the `Rental` TypeScript interface relations we established previously.
 - **Status Rendering:** Instead of standard text, I designed custom colored pills (`badge-active` and `badge-returned`) to instantly communicate the lifecycle state of the rental visually.
 - **Dynamic Actions:** If a rental is active, a red "Return" button is displayed. If it's already returned, the UI dynamically replaces the button with an italicized "on [Date]" label to provide an elegant history log.
+
+## Admin Control Center (AdminView)
+**Prompt used:**
+> Create frontend/src/views/AdminView.vue. Hardware Management: Table with add/edit/delete/toggle repair. User Management: Form to create new user, POST /api/users directly. Audit section: Run audit, display report with colored severities. Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Tabbed Interface:** Built a state-driven tab system (`activeTab`) to avoid rendering all 3 complex sections at once. The user can smoothly switch between Hardware, Users, and AI Audit views without routing changes.
+- **Hardware CRUD:** Implemented an inline form card that toggles between "Edit" and "Create" modes based on `editingId`. Used a `confirm()` prompt for deletes to prevent accidental data loss. Added a quick "Toggle Repair" action button (🔧) for rapid status switching without opening the full form.
+- **Audit Visualization:** Styled the Audit Report heavily. Used custom classes (`severity-critical`, `severity-warning`, `severity-info`) to dynamically apply border colors, background tints, and text colors to the AI-generated issue cards, making it instantly readable for administrators.
