@@ -240,3 +240,10 @@
 
 **Any correction I had to make:**
 - **Rate Limiting:** Since AI model generations are expensive, the user requested adding a strict rate limit for the `/api/audit` endpoint. I added `AUDIT_RATE_LIMIT=5` to the `.env` settings and implemented rate limiting using the industry-standard `slowapi` library (`uv add slowapi`). If a user exceeds 5 requests within a minute, `slowapi` explicitly raises a `RateLimitExceeded` exception which translates to HTTP 429 Too Many Requests. Added `test_run_audit_rate_limit` to verify the `slowapi` enforcement perfectly.
+
+## Frontend Setup & Types
+**Prompt used:**
+> Create frontend/src/types/index.ts with TypeScript interfaces that match the backend Pydantic schemas exactly. Export all interfaces. No logic, only types.
+
+**What AI decided and why:**
+- **TypeScript Definitions:** Created `frontend/src/types/index.ts` with `User`, `Hardware`, `Rental`, `AuditIssue`, `AuditReport` and `PaginatedResponse<T>` interfaces exactly matching the backend schema. This ensures end-to-end type safety between the FastAPI backend and Vue frontend, facilitating clean autocomplete and preventing runtime errors before they occur.

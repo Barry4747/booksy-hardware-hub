@@ -26,3 +26,4 @@
 * **Rentals:** Renting devices, returning devices (automatically updating hardware statuses).
 * **Audit System (AI-ready):** A reporting engine that flags potential inventory issues, preparing the codebase for a future AI/LLM integration.
 * **Frontend:** Vue 3, TypeScript, Vite, Vue Router, Pinia, Axios.
+* **Type Safety:** Shared TypeScript interfaces matching the backend Pydantic schemas for end-to-end safety.
