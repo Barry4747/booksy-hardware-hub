@@ -28,7 +28,9 @@ api.interceptors.response.use(
         return api(originalRequest)
       } catch (refreshError) {
         // If refresh fails, clear local user state and redirect to login
-        // TODO: clear Pinia auth store when it's created
+        const { useAuthStore } = await import('../stores/auth')
+        const authStore = useAuthStore()
+        authStore.user = null
         router.push('/login')
         return Promise.reject(refreshError)
       }
