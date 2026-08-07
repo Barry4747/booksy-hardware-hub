@@ -126,3 +126,16 @@
 - **Passlib bug:** As mentioned above, swapped `passlib` for pure `bcrypt`.
 - **TestClient Cookies:** The test client was initially rejecting secure cookies because it defaults to `http://testserver`. Fixed by enforcing HTTPS at the client level.
 - **CI Environment Variables:** The GitHub Actions CI pipeline failed to run the tests because `pydantic-settings` strictly validates required configuration variables (`SECRET_KEY`, `ALGORITHM`, etc.) that are normally loaded from `.env`. Added dummy values directly into the `env` block of the pytest step in `tests.yml`.
+
+## User Service
+**Prompt used:**
+> now lets move to creating users repository and service. its task is to allow admins to create user accounts. admin providec email, password, and the is_admin bool. dont implement the router yet. Act as a senior dev
+
+**What AI decided and why:**
+- **`UserService` (`app/services/users.py`):** Implemented a dedicated service for user management. The `create_user` method correctly orchestrates checking for existing emails, hashing the password (via `security.py`), and committing the transaction (respecting the Unit of Work pattern at the service level).
+- **`UserError` (`app/exceptions/users.py`):** Created a semantic base exception for user-related errors, alongside `UserAlreadyExistsError` (409 Conflict). Registered it globally in `main.py` next to `AuthError`.
+- **Dependency Injection (`app/api/dependencies/core.py`):** Added `get_user_service` to our DI container, ready for when we build the router.
+- **Testing:** Maintained the 100% test coverage culture by writing `backend/tests/test_users_service.py`.
+
+**Any correction I had to make:**
+- No corrections were necessary.

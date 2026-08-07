@@ -6,6 +6,10 @@ from .auth import (
     UserNotFoundError,
     NotEnoughPrivilegesError,
 )
+from .users import (
+    UserError,
+    UserAlreadyExistsError,
+)
 
 __all__ = [
     "AuthError",
@@ -14,4 +18,6 @@ __all__ = [
     "InvalidTokenError",
     "UserNotFoundError",
     "NotEnoughPrivilegesError",
+    "UserError",
+    "UserAlreadyExistsError",
 ]
