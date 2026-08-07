@@ -334,3 +334,11 @@
 - **Tabbed Interface:** Built a state-driven tab system (`activeTab`) to avoid rendering all 3 complex sections at once. The user can smoothly switch between Hardware, Users, and AI Audit views without routing changes.
 - **Hardware CRUD:** Implemented an inline form card that toggles between "Edit" and "Create" modes based on `editingId`. Used a `confirm()` prompt for deletes to prevent accidental data loss. Added a quick "Toggle Repair" action button (🔧) for rapid status switching without opening the full form.
 - **Audit Visualization:** Styled the Audit Report heavily. Used custom classes (`severity-critical`, `severity-warning`, `severity-info`) to dynamically apply border colors, background tints, and text colors to the AI-generated issue cards, making it instantly readable for administrators.
+
+## Cascade Deletions for Hardware
+**Prompt used:**
+> In backend/app/models/hardware.py update the relationship to rentals: cascade="all, delete-orphan". Write a test in tests/test_hardware.py to verify. Update AI_LOG and README. Commit: fix: add cascade delete for hardware rentals
+
+**What AI decided and why:**
+- **Schema Update:** Added the `cascade="all, delete-orphan"` rule to `Hardware.rentals`. This leverages SQLAlchemy's powerful unit-of-work mechanics to automatically scrub associated rentals before wiping the parent hardware row. Without this, trying to delete hardware that had been rented out previously would trigger a nasty `sqlite3.IntegrityError` due to foreign key constraints violating DB rules.
+- **Testing:** Wrote `test_hardware_cascade_delete_rentals` in a brand new file `test_hardware.py`. The test cleanly mounts a database session via fixtures, manually inserts an admin, hardware, and rental, deletes the hardware, and verifies that the rental was completely annihilated from the DB along with it. Passed flawlessly on the first run.

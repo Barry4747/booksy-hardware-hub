@@ -19,4 +19,4 @@ class Hardware(Base):
     notes = Column(String, nullable=True)
     created_at = Column(DateTime, default=func.now())
 
-    rentals = relationship("Rental", back_populates="hardware")
+    rentals = relationship("Rental", back_populates="hardware", cascade="all, delete-orphan")

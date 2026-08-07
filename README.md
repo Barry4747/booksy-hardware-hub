@@ -23,7 +23,7 @@
 ## Shortcuts
 * **Users:** Registration, profile retrieval.
 * **Hardware Inventory:** Full CRUD for IT Admins.
-* **Rentals:** Renting devices, returning devices (automatically updating hardware statuses).
+* **Rentals:** Renting devices, returning devices (automatically updating hardware statuses), cascading deletions to prevent orphaned records.
 * **Audit System (AI-ready):** A reporting engine that flags potential inventory issues, preparing the codebase for a future AI/LLM integration.
 * **Frontend:** Vue 3, TypeScript, Vite, Vue Router, Pinia, Axios.
 * **Type Safety:** Shared TypeScript interfaces matching the backend Pydantic schemas for end-to-end safety.
