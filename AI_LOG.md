@@ -74,4 +74,18 @@
 - **Dependencies (`app/api/dependencies/core.py`):** Created clear dependency injection chains using FastAPI's `Depends` to supply the repository to the service, keeping the controller layer extremely lean.
 
 **Any correction I had to make:**
+- In `refresh`, I had to make sure we parse the `sub` token claim to `int` safely as JWT claims are strictly strings and the user repository expects an integer ID.
 - **CSRF Protection via SameSite**: Originally used `samesite="lax"` for auth cookies, but as pointed out, this could conflict with robust CSRF protection in strict single-origin APIs. Upgraded cookie settings to use `samesite="strict"` to ensure cookies are never sent in cross-site requests, mitigating CSRF vulnerabilities completely for same-site clients.
+
+## API Layer (Auth Routers)
+**Prompt used:**
+> In backend/app/api/routers/auth.py implement these endpoints: POST /api/auth/login, POST /api/auth/logout, POST /api/auth/refresh, GET /api/auth/me. Routers must be thin — no business logic, only call AuthService methods. Register the router in app/main.py with prefix /api/auth. Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Thin Routers (`app/api/routers/auth.py`):** Created the requested endpoints ensuring absolutely zero business logic resides in the controller. The router merely injects dependencies (`AuthService` and optionally `current_user`), maps the HTTP request (JSON body, headers, cookies), and returns the service output.
+- **`get_current_user` Dependency:** Added this extra dependency to `app/api/dependencies/core.py` to extract and decode the `access_token` cookie, which is necessary to inject the `current_user` into the `/me` endpoint.
+- **FastAPI Registration (`app/main.py`):** Scaffolded a proper `FastAPI` application instance and registered the auth router with the `/api/auth` prefix.
+- **Schema update (`app/schemas/user.py`):** Added a `UserLogin` Pydantic model so that `/login` safely validates incoming JSON containing email and password.
+
+**Any correction I had to make:**
+- **EmailStr in UserLogin:** Corrected the `UserLogin` schema to use `EmailStr` instead of `str` for the email field, ensuring incoming login requests are strictly validated before reaching the service layer.

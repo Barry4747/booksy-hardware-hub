@@ -10,5 +10,6 @@
 - Repository layer (`app/repositories/users.py`)
 - Service layer (`app/services/auth.py`)
 - Dependency injection (`app/api/dependencies/core.py`)
+- API Auth Routers (`app/api/routers/auth.py`, `app/main.py`)
 
 ## Shortcuts
