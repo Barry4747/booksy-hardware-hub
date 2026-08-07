@@ -7,5 +7,8 @@
 - Seed script with anomaly detection (`app/db/seed.py`)
 - Admin user creation script (`create_admin.py`)
 - Password hashing and JWT token management (`app/core/security.py`)
+- Repository layer (`app/repositories/users.py`)
+- Service layer (`app/services/auth.py`)
+- Dependency injection (`app/api/dependencies/core.py`)
 
 ## Shortcuts

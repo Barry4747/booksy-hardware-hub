@@ -63,3 +63,15 @@
 
 **Any correction I had to make:**
 - **`datetime.utcnow()` deprecation:** Replaced `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)` when calculating token expiration. `utcnow()` is deprecated in Python 3.12+ and using timezone-aware objects is a more robust practice for JWT tokens.
+
+## Service & Repository Architecture (Users & Auth)
+**Prompt used:**
+> In backend/app/repositories/users.py implement UserRepository. In backend/app/services/auth.py implement AuthService (login, logout, refresh, me) using HttpOnly cookies. Repositories must use db.add() and db.flush() only — never db.commit(). Commit belongs to the service layer as a single Unit of Work. Register UserRepository and AuthService in app/api/dependencies/core.py. Update AI_LOG and README.
+
+**What AI decided and why:**
+- **UserRepository (`app/repositories/users.py`):** Implemented strict repository pattern wrapping `Session`. As requested, strictly avoided `db.commit()` in favor of `db.flush()` so that the database transaction remains open for the service layer to control.
+- **AuthService (`app/services/auth.py`):** Implemented token generation, cookie management (using `Secure`, `HttpOnly`, and `Lax`), and core auth logic cleanly separating it from API routing. The service receives `db` to orchestrate Unit of Work commits if needed in the future (e.g. for `last_login` updates).
+- **Dependencies (`app/api/dependencies/core.py`):** Created clear dependency injection chains using FastAPI's `Depends` to supply the repository to the service, keeping the controller layer extremely lean.
+
+**Any correction I had to make:**
+- **CSRF Protection via SameSite**: Originally used `samesite="lax"` for auth cookies, but as pointed out, this could conflict with robust CSRF protection in strict single-origin APIs. Upgraded cookie settings to use `samesite="strict"` to ensure cookies are never sent in cross-site requests, mitigating CSRF vulnerabilities completely for same-site clients.
