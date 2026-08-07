@@ -1,17 +1,16 @@
 import json
-import google.generativeai as genai
+from google import genai
 from sqlalchemy.orm import Session
 from app.repositories.hardware import HardwareRepository
 from app.schemas.audit import AuditReport, AuditIssue, SeverityEnum
 from app.core.config import settings
+from app.exceptions.audit import AuditGenerationError
 
 class AuditService:
     def __init__(self, db: Session, hw_repo: HardwareRepository):
         self.db = db
         self.hw_repo = hw_repo
-        
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
     def run_audit(self) -> AuditReport:
         hardware_list = self.hw_repo.list(limit=1000)
@@ -59,7 +58,10 @@ Inventory:
 {inventory_json}"""
 
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=prompt
+            )
             
             raw_text = response.text.strip()
             if raw_text.startswith("```json"):
@@ -91,7 +93,4 @@ Inventory:
             )
         except Exception as e:
             print(f"Error during audit: {e}")
-            return AuditReport(
-                issues=[],
-                summary="Audit failed to parse AI response"
-            )
+            raise AuditGenerationError(detail=f"Audit failed: {str(e)}")

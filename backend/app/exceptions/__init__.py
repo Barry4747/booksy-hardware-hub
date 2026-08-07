@@ -21,6 +21,7 @@ from .rentals import (
 )
 from .audit import (
     AuditError,
+    AuditGenerationError,
 )
 
 __all__ = [
@@ -37,4 +38,6 @@ __all__ = [
     "RentalError",
     "RentalNotFoundError",
     "HardwareUnavailableError",
+    "AuditError",
+    "AuditGenerationError",
 ]

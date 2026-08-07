@@ -26,7 +26,7 @@ def test_gemini_audit_success(db_session):
     ```
     """
     
-    with patch.object(service.model, 'generate_content', return_value=mock_response) as mock_gen:
+    with patch.object(service.client.models, 'generate_content', return_value=mock_response) as mock_gen:
         report = service.run_audit()
         
         mock_gen.assert_called_once()
@@ -44,9 +44,10 @@ def test_gemini_audit_parse_failure(db_session):
     mock_response = MagicMock()
     mock_response.text = "This is not valid JSON at all!"
     
-    with patch.object(service.model, 'generate_content', return_value=mock_response):
-        report = service.run_audit()
+    with patch.object(service.client.models, 'generate_content', return_value=mock_response):
+        from app.exceptions.audit import AuditGenerationError
+        with pytest.raises(AuditGenerationError) as excinfo:
+            service.run_audit()
         
-        assert isinstance(report, AuditReport)
-        assert len(report.issues) == 0
-        assert report.summary == "Audit failed to parse AI response"
+        assert excinfo.value.status_code == 500
+        assert "Audit failed" in excinfo.value.detail
