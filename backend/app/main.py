@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.api.routers import auth, users
+from app.api.routers import auth, users, hardware
 from app.exceptions.auth import AuthError
 from app.exceptions.users import UserError
 from app.exceptions.hardware import HardwareError
@@ -27,3 +27,4 @@ async def hardware_exception_handler(request: Request, exc: HardwareError):
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(hardware.router, prefix="/api/hardware", tags=["hardware"])
