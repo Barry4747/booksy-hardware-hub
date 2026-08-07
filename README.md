@@ -16,7 +16,12 @@
 - Hardware Router (`app/api/routers/hardware.py`)
 - Rental Layer (`app/repositories/rentals.py`, `app/services/rentals.py`)
 - Rental Router (`app/api/routers/rentals.py`)
+- Audit Layer (`app/repositories/audit.py`, `app/services/audit.py`)
 - Custom exception handling (`app/exceptions/auth.py`, `app/exceptions/users.py`)
 - Unit and integration test suite (`tests/` with 99% coverage)
 
 ## Shortcuts
+* **Users:** Registration, profile retrieval.
+* **Hardware Inventory:** Full CRUD for IT Admins.
+* **Rentals:** Renting devices, returning devices (automatically updating hardware statuses).
+* **Audit System (AI-ready):** A reporting engine that flags potential inventory issues, preparing the codebase for a future AI/LLM integration.
