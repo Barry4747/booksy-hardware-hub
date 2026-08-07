@@ -316,3 +316,12 @@
 - **Reactivity & State Synchronization:** Implemented `watch([page, statusFilter, sortBy, sortOrder], fetchHardware)`. This reactive architecture ensures that any UI interaction (changing page, selecting a filter, clicking a table header) instantly and automatically triggers a fresh API call to the backend without writing messy manual event listeners.
 - **Design & Layout:** Styled the component extensively with dark mode glassmorphism matching the login page. Added a sleek AI Search input with a pulsing sparkle icon (✨) to visually hint at future capabilities.
 - **Data Safety:** The "Rent" button dynamically checks `item.status === 'Available'` to disable itself, preventing users from attempting to rent hardware that is currently in repair or already checked out, minimizing unnecessary API 409 errors.
+
+## User Rentals Management (MyRentalsView)
+**Prompt used:**
+> Create frontend/src/views/MyRentalsView.vue. On mount: fetch rentals via rentalsService.getMyRentals(). Display table with columns: Device Name, Brand, Rented At, Status, Action. Action column: Return button for active rentals (returned_at === null). On return click: call rentalsService.return(rental.id). On success: show success toast, refresh. Vanilla CSS.
+
+**What AI decided and why:**
+- **Component Design:** Built a table identical in style to `DashboardView` to keep the UI strictly consistent. The component maps over nested data seamlessly (`rental.hardware.name`), taking advantage of the `Rental` TypeScript interface relations we established previously.
+- **Status Rendering:** Instead of standard text, I designed custom colored pills (`badge-active` and `badge-returned`) to instantly communicate the lifecycle state of the rental visually.
+- **Dynamic Actions:** If a rental is active, a red "Return" button is displayed. If it's already returned, the UI dynamically replaces the button with an italicized "on [Date]" label to provide an elegant history log.

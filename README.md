@@ -34,3 +34,4 @@
 * **Shared UI Architecture:** Reusable Vanilla CSS components (`AppNavbar`, `AppToast`, `StatusBadge`) providing dynamic layout, role-based navigation rendering, and visual state representation for the entire application.
 * **Authentication UI:** A highly polished, dynamic `LoginView` offering responsive error handling and redirection, seamlessly integrated with the Pinia Auth Store and Axios interceptors.
 * **Inventory Dashboard:** A robust `DashboardView` with real-time server-side pagination, sorting, status filtering, and one-click hardware renting wrapped in a modern, dark-themed glassmorphism UI.
+* **User Rentals Management:** A dedicated `MyRentalsView` enabling users to view their active and past hardware rentals with one-click return functionality and historical date tracking.
