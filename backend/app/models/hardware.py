@@ -1,10 +1,9 @@
 import enum
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Date, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Date, DateTime, Enum, func
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
-class HardwareStatus(str, enum.Enum):
+class HardwareStatus(str, enum.Enum):   
     AVAILABLE = "Available"
     IN_USE = "In Use"
     REPAIR = "Repair"
@@ -18,6 +17,6 @@ class Hardware(Base):
     purchase_date = Column(Date, nullable=True)
     status = Column(Enum(HardwareStatus), default=HardwareStatus.AVAILABLE, nullable=False)
     notes = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=func.now())
 
     rentals = relationship("Rental", back_populates="hardware")
