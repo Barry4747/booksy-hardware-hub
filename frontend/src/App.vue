@@ -26,22 +26,20 @@ body {
   font-family: 'Inter', 'Roboto', 'Outfit', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #121212;
-  color: #e0e0e0;
+  background-color: #f3f4f6;
+  color: #111827;
   line-height: 1.6;
 }
 
 .app-layout {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 .main-content {
   flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
+  padding: 2.5rem 3rem;
   width: 100%;
-  margin: 0 auto;
 }
 </style>
