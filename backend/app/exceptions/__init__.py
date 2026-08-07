@@ -10,6 +10,10 @@ from .users import (
     UserError,
     UserAlreadyExistsError,
 )
+from .hardware import (
+    HardwareError,
+    HardwareNotFoundError,
+)
 
 __all__ = [
     "AuthError",
@@ -20,4 +24,6 @@ __all__ = [
     "NotEnoughPrivilegesError",
     "UserError",
     "UserAlreadyExistsError",
+    "HardwareError",
+    "HardwareNotFoundError",
 ]
