@@ -12,5 +12,6 @@
 - Dependency injection (`app/api/dependencies/core.py`, `app/api/dependencies/auth.py`)
 - API Auth Routers (`app/api/routers/auth.py`, `app/main.py`)
 - Custom exception handling (`app/exceptions/auth.py`)
+- Unit and integration test suite (`tests/` with 99% coverage)
 
 ## Shortcuts

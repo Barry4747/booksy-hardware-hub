@@ -110,3 +110,18 @@
 
 **Any correction I had to make:**
 - No corrections were necessary.
+
+## Authentication Test Suite
+**Prompt used:**
+> Write tests that cover 100% of the auth logic. Test also edge cases and happy/sad paths.
+
+**What AI decided and why:**
+- **Test Infrastructure (`conftest.py`):** Set up a robust fixture system utilizing an in-memory SQLite database (`sqlite:///:memory:`) so real data is never touched. 
+- **FastAPI TestClient Config:** Configured the FastAPI `TestClient` with `base_url="https://testserver"` so that the test client successfully stores and sends cookies marked with `secure=True` (which the Auth service issues).
+- **Passlib Migration:** During testing, we discovered `passlib` is largely unmaintained and throws a `ValueError` when used with modern `bcrypt` (>=4.0). Decided to rip out `passlib` entirely and implement `app/core/security.py` using native `bcrypt` functions directly. This fixed the tests and modernized the app.
+- **Coverage:** Wrote 32 tests spanning security utilities, repositories, services, dependencies, and endpoint routers. Achieved 99% overall coverage.
+- **CI Fix:** Updated the GitHub Actions workflow (`tests.yml`) to invoke pytest via `python -m pytest` so the `app` module is correctly injected into `sys.path` during the pipeline run.
+
+**Any correction I had to make:**
+- **Passlib bug:** As mentioned above, swapped `passlib` for pure `bcrypt`.
+- **TestClient Cookies:** The test client was initially rejecting secure cookies because it defaults to `http://testserver`. Fixed by enforcing HTTPS at the client level.
