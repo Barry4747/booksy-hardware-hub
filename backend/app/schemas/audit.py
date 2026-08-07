@@ -8,8 +8,8 @@ class SeverityEnum(str, Enum):
     INFO = "info"
 
 class AuditIssue(BaseModel):
-    id: str
-    name: str
+    hardware_id: int
+    hardware_name: str
     severity: SeverityEnum
     issue: str
     recommendation: str

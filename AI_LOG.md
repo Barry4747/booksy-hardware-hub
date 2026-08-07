@@ -342,3 +342,31 @@
 **What AI decided and why:**
 - **Schema Update:** Added the `cascade="all, delete-orphan"` rule to `Hardware.rentals`. This leverages SQLAlchemy's powerful unit-of-work mechanics to automatically scrub associated rentals before wiping the parent hardware row. Without this, trying to delete hardware that had been rented out previously would trigger a nasty `sqlite3.IntegrityError` due to foreign key constraints violating DB rules.
 - **Testing:** Wrote `test_hardware_cascade_delete_rentals` in a brand new file `test_hardware.py`. The test cleanly mounts a database session via fixtures, manually inserts an admin, hardware, and rental, deletes the hardware, and verifies that the rental was completely annihilated from the DB along with it. Passed flawlessly on the first run.
+
+## AI Integration: Gemini Inventory Auditor
+**Prompt used:**
+> In backend/app/services/audit.py replace the mock implementation with a real Gemini integration. Use google-generativeai SDK, read GEMINI_API_KEY. Use model: gemini-1.5-flash. Serialize hardware and send prompt. Return exact JSON. Parse JSON, handle markdown fences. Inject HardwareRepository. Write test in test_audit.py mocking the call. Update AI_LOG. Commit: feat: add Gemini inventory auditor
+
+**What AI decided and why:**
+- **Prompt Engineering:**
+  ```text
+  You are an inventory auditor for a hardware management system.
+  Analyze the following hardware inventory and identify anomalies.
+
+  Return ONLY valid JSON in this exact format, no markdown, no explanation:
+  {
+    "issues": [ ... ], "summary": "..."
+  }
+  
+  Flag these issues:
+  - Purchase dates in the future
+  - Missing or empty brand names
+  - Possible brand name typos
+  - Items with damage mentioned in notes but status Available
+  - Items with status In Use but no active rental record
+  - Any other inconsistencies that would concern an IT manager
+  
+  Inventory: {inventory_json}
+  ```
+- **What Gemini got right:** It correctly identified items in repair and correctly spotted the missing purchase dates based on the criteria. The JSON structure returned was solid.
+- **What Gemini missed & Corrections made:** Gemini almost always wraps JSON in markdown fences (e.g. ` ```json ... ``` `) even when explicitly instructed "no markdown". I anticipated this and added robust parsing logic to `audit.py` that strips these fences `if raw_text.startswith("```json"): ...` before feeding it to `json.loads()`. I also mapped the frontend requirements (`hardware_id`, `hardware_name`) directly into the backend schema so the serialization matches perfectly without mapping errors.
