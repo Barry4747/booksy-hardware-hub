@@ -265,3 +265,11 @@
 - **State Management:** Implemented the `useAuthStore` using the modern Composition API pattern (with `ref` and `computed`). This seamlessly integrates with the Vue 3 reactivity system.
 - **Security:** In strict adherence to the HttpOnly architecture, the store relies purely on the server's HTTP responses (via the Axios instance) to verify identity, without ever touching local storage or parsing tokens on the client.
 - **Dynamic Interceptor Integration:** Updated the previously built `api.ts` to dynamically import `useAuthStore` so it securely clears the local user state (`authStore.user = null`) if an automatic background token refresh fails.
+
+## Vue Router Configuration & Navigation Guards
+**Prompt used:**
+> Configure frontend/src/router/index.ts with routes: /login -> LoginView, / -> DashboardView, /admin -> AdminView, /rentals -> MyRentalsView. Add a global beforeEach guard that calls authStore.fetchMe() and handles redirects based on auth and admin requirements. Use meta fields.
+
+**What AI decided and why:**
+- **Route Definitions:** Stubs were created for all four views, and the routes were defined in `index.ts` with custom `meta` properties (`requiresAuth`, `requiresAdmin`). Added a TypeScript declaration merge for `RouteMeta` to maintain strict typing.
+- **Security Guards:** Implemented a robust `beforeEach` navigation guard. It dynamically initializes the user session on startup by calling `authStore.fetchMe()` if the route demands it. It intercepts unauthorized access to protected paths, boots non-admins out of the `/admin` view, and gracefully prevents logged-in users from seeing the `/login` page again.
