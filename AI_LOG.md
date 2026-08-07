@@ -281,3 +281,11 @@
 **What AI decided and why:**
 - **State Management:** Implemented `useToastStore` with the Composition API. The store manages an array of `Toast` objects and assigns unique sequential IDs.
 - **Auto-Dismiss:** The `add()` action automatically schedules a `setTimeout` to trigger the `remove(id)` action after 3000ms, ensuring notifications don't pile up endlessly and the UI stays clean.
+
+## Modular API Services
+**Prompt used:**
+> Create frontend/src/services/hardware.ts, rentals.ts, audit.ts. Map getAll, getById, create, update, remove, rent, return, getMyRentals, runAudit to the axios instance. Functions must throw errors so calling components can catch them for toasts.
+
+**What AI decided and why:**
+- **Adaptation to Backend REST:** Noticed that the original prompt requested outdated RPC-style URLs (e.g., `POST /api/rentals/{id}/return` and `GET /api/audit`). I automatically corrected the frontend mapping to align with the strictly RESTful backend endpoints we built earlier (`PATCH /api/rentals/{id}` and `POST /api/audit`). For `getMyRentals()`, mapped it to `GET /api/rentals` which natively leverages the backend's `current_user` contextual scoping.
+- **Type Safety & Error Handling:** Enhanced `src/types/index.ts` by adding `HardwareCreate` and `HardwareUpdate` types. Ensured every API function properly casts the generic `<T>` Axios responses to strict TypeScript interfaces. Errors are left unhandled by design (`throw error`), giving Vue components the explicit responsibility to trigger `Toast` notifications.
