@@ -151,3 +151,40 @@
 
 **Any correction I had to make:**
 - No corrections were necessary.
+
+## Hardware Repository
+**Prompt used:**
+> you are senior developer. add hardware repository with flush pattern (no commit in repo), that will include get by id, listing, deletion and updating etc. listing should include pagination, filtering and sorting (incr and decr). should it be in repository or in service? remember to update md files
+
+**What AI decided and why:**
+- **Architecture (Repository vs Service):** Filtering, sorting, and pagination logic directly constructs and manipulates the database query (`OFFSET`, `LIMIT`, `ORDER BY`, `WHERE`). Therefore, this logic firmly belongs in the **Repository** layer. The Service layer is responsible for orchestrating these calls, validating business rules, and managing the transaction (the Unit of Work via `db.commit()`), while leaving raw query compilation to the Repository.
+- **`HardwareRepository` (`app/repositories/hardware.py`):** Implemented a full CRUD repository using the `flush()` pattern. It features a robust `list()` method supporting dynamic dictionary-based filtering (e.g. `{"brand": "Apple"}`) and dynamic sorting (e.g. `sort_by="name", sort_desc=True`) directly via SQLAlchemy's ORM queries.
+- **Testing (`tests/test_hardware_repository.py`):** Wrote unit tests for all CRUD operations, including specific assertions for dynamic filtering and sorting to maintain our 100% test coverage culture.
+
+**Any correction I had to make:**
+- No corrections were necessary.
+
+## Hardware Service
+**Prompt used:**
+> now add hardware service with unit of work commit. again, act as a senior dev and make sure to update md files
+
+**What AI decided and why:**
+- **`HardwareService` (`app/services/hardware.py`):** Wrapped the repository with business logic. The service receives Pydantic schemas (`HardwareCreate`, `HardwareUpdate`) and returns schemas (`HardwareResponse`), completely insulating the router from SQLAlchemy models. 
+- **Unit of Work:** Implemented the flush-commit pattern properly. The service orchestrates the state changes via repository methods, and centrally calls `self.db.commit()` upon successful completion, ensuring database transaction consistency.
+- **`HardwareError` (`app/exceptions/hardware.py`):** Added a new domain-specific error hierarchy, handling `404 Not Found` correctly, and registered it in the global FastAPI app exception handler.
+- **Testing:** `tests/test_hardware_service.py` provides 100% code coverage across all operations (CRUD + not-found sad paths).
+
+**Any correction I had to make:**
+- No corrections were necessary.
+
+## Hardware Router
+**Prompt used:**
+> now add hardware router. get and list is available for isAuthenticated, but mutations are available only for admins
+
+**What AI decided and why:**
+- **Role-Based Access Control (RBAC):** Using FastAPI's dependency injection system, I attached `get_current_user` to the `GET` methods (allowing any authenticated user to list and view hardware) and `require_admin` to `POST`, `PUT`, and `DELETE` (restricting mutations to admins).
+- **`Hardware Router` (`app/api/routers/hardware.py`):** Exposed standard CRUD endpoints for `/api/hardware`. The `list` endpoint accepts query parameters that are passed seamlessly down to the service and repository for pagination, filtering, and sorting.
+- **Testing:** Added `tests/test_hardware_endpoints.py` to assert that regular users get a `403 Forbidden` when attempting mutations, while keeping 100% test coverage.
+
+**Any correction I had to make:**
+- No corrections were necessary.
