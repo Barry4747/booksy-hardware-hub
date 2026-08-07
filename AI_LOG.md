@@ -19,3 +19,35 @@
 - **datetime.now() as default**: Agent passed `datetime.now(timezone.utc)` directly as 
   a column default, which evaluates once at import time. All records would share the same 
   timestamp. Fixed by wrapping in a lambda or using SQLAlchemy's `func.now()`.
+
+## Seed and Admin Scripts Creation
+**Prompt used:**
+> Create two scripts in backend/: app/db/seed.py to load and process hardware seed data with anomaly detection, and create_admin.py to create an admin user using passlib bcrypt. Create an empty app/db/seed_data.json. Update AI_LOG.md and README.md.
+
+**What AI decided and why:**
+- **Seed script (app/db/seed.py):** Implemented logging to report anomalies as requested. Structured data cleaning around `HardwareStatus` parsing, date formatting (supports multiple formats), and handled notes/history transformations. Made it idempotent by checking if `Hardware.id` exists before inserting.
+- **Admin script (create_admin.py):** Utilized `passlib.context.CryptContext` with bcrypt to hash passwords. Reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from environment with a fallback to interactive prompt using `getpass`.
+- **Empty Seed JSON:** Created `backend/app/db/seed_data.json` containing just `[]`.
+
+**Any correction I had to make:**
+- **In-memory duplicate detection**: The initial implementation only queried the database 
+  to detect duplicate IDs. This missed duplicates within the seed file itself — if two 
+  records with the same ID appear in seed_data.json, the first would be added to the 
+  session but not yet committed, so the second DB query would find nothing and both would 
+  be inserted, causing a primary key violation on commit. Fixed by tracking seen IDs in 
+  a set before any DB interaction.
+
+- **difflib for typo detection**: Replaced the custom substring/length heuristic with 
+  Python's built-in difflib.get_close_matches, which uses SequenceMatcher for more 
+  accurate similarity scoring. cutoff=0.7 catches clear typos like "appel" while 
+  avoiding false positives on unrelated brand names.
+
+- **Session not closed on error**: The agent placed `db.close()` outside the try/except 
+  block. If an exception occurred before reaching that line, the session would leak. 
+  I wrapped the entire seeding logic in a try/except/finally block to guarantee the 
+  session is always closed.
+
+- **Unrecognized date format not handled**: The original `parse_date` function returned 
+  `None, False` for completely unrecognized formats, silently discarding the anomaly. 
+  I added a third case that returns `None, True` so the anomaly counter increments and 
+  the issue is logged.
