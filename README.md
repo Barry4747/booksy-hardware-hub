@@ -25,3 +25,4 @@
 * **Hardware Inventory:** Full CRUD for IT Admins.
 * **Rentals:** Renting devices, returning devices (automatically updating hardware statuses).
 * **Audit System (AI-ready):** A reporting engine that flags potential inventory issues, preparing the codebase for a future AI/LLM integration.
+* **Frontend:** Vue 3, TypeScript, Vite, Vue Router, Pinia, Axios.
