@@ -298,3 +298,12 @@
 - **AppNavbar:** Implemented dynamic role-based rendering using `authStore.isAdmin` and seamlessly hooked up the `logout()` action with a router push to `/login`. Designed with a modern, dark glassmorphism Vanilla CSS look.
 - **StatusBadge:** Built a `computed` property to dynamically assign CSS classes (green/gray/red) based on strictly typed hardware statuses.
 - **AppToast & App.vue:** Built a fixed-position global container `<TransitionGroup>` for animated toast mounting/unmounting. Integrated `AppNavbar` and `AppToast` globally inside `App.vue`, completely replacing the default Vite scaffolding boilerplate and establishing our own UI boundaries.
+
+## Authentication Interface (LoginView)
+**Prompt used:**
+> Create frontend/src/views/LoginView.vue. Email and password fields. On submit: call authStore.login(email, password), redirect to / on success, show error via toast store. Redirect immediately if already logged in. No external UI library, plain HTML with scoped CSS.
+
+**What AI decided and why:**
+- **Robust Flow:** Built a dual-check system for authenticated users. The `onMounted` hook proactively catches already-logged-in users and pushes them to `/`, mirroring the safety net in `router/index.ts`.
+- **User Experience (UX):** Integrated our `toastStore` to surface explicit API errors to the user (e.g. invalid credentials) without using ugly `alert()` popups. Added an `isSubmitting` reactive flag to disable fields and buttons during the API call, preventing double-submissions.
+- **Aesthetic:** Adhered to the `Vanilla CSS` requirement but dialed up the aesthetics to premium levels using CSS gradients, shadow layering, glassmorphism (`backdrop-filter: blur`), and micro-animations on hover and focus.
