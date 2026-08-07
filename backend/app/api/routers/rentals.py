@@ -50,10 +50,14 @@ def create_rental(
         user_id=current_user.id
     )
 
-@router.patch("/{id}", response_model=RentalResponse, dependencies=[Depends(get_current_user)])
+@router.patch("/{id}", response_model=RentalResponse)
 def update_rental(
     id: int,
     rental_in: RentalUpdate,
+    current_user: User = Depends(get_current_user),
     rental_service: RentalService = Depends(get_rental_service)
 ):
+    rental = rental_service.get_rental(id)
+    if not current_user.is_admin and rental.user_id != current_user.id:
+        raise NotEnoughPrivilegesError()
     return rental_service.update_rental(id, rental_in)

@@ -109,3 +109,29 @@ def test_list_rentals(db_session, test_user):
     items = service.list_rentals(limit=10)
     
     assert len(items) >= 1
+
+def test_atomic_transaction_rollback(db_session, test_user):
+    import unittest.mock
+    from app.services.rentals import RentalService
+    from app.repositories.rentals import RentalRepository
+    from app.repositories.hardware import HardwareRepository
+    
+    hw_repo = HardwareRepository(db_session)
+    rental_repo = RentalRepository(db_session)
+    service = RentalService(db_session, rental_repo, hw_repo)
+    
+    hw = hw_repo.create(name="MacBook", brand="Apple", status=HardwareStatus.AVAILABLE)
+    db_session.commit()
+    
+    with unittest.mock.patch.object(db_session, 'commit', side_effect=Exception("DB Error")) as mock_commit:
+        with unittest.mock.patch.object(db_session, 'rollback') as mock_rollback:
+            with pytest.raises(Exception, match="DB Error"):
+                service.create_rental(hw.id, test_user.id)
+            
+            mock_rollback.assert_called_once()
+            
+    # Since we mocked rollback, the session state is technically dirty, but we proved it tried to rollback.
+    db_session.rollback() # Clean up manually
+    
+    rentals = rental_repo.list()
+    assert not any(r.hardware_id == hw.id for r in rentals)

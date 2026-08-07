@@ -36,8 +36,12 @@ class RentalService:
         self.hw_repo.update(hw, {"status": HardwareStatus.IN_USE})
         rental = self.rental_repo.create(hardware_id=hardware_id, user_id=user_id)
         
-        self.db.commit()
-        return RentalResponse.model_validate(rental)
+        try:
+            self.db.commit()
+            return RentalResponse.model_validate(rental)
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def update_rental(self, id: int, updates: RentalUpdate) -> RentalResponse:
         rental = self.rental_repo.get_by_id(id)
@@ -66,6 +70,9 @@ class RentalService:
                 self.hw_repo.update(hw, {"status": HardwareStatus.AVAILABLE})
                     
         rental = self.rental_repo.update(rental, update_data)
-        self.db.commit()
-        
-        return RentalResponse.model_validate(rental)
+        try:
+            self.db.commit()
+            return RentalResponse.model_validate(rental)
+        except Exception as e:
+            self.db.rollback()
+            raise e
