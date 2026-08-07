@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getAll, create, update, remove } from '../services/hardware'
 import { runAudit } from '../services/audit'
 import api from '../services/api'
@@ -8,6 +9,8 @@ import type { Hardware, HardwareCreate, AuditReport } from '../types'
 import StatusBadge from '../components/shared/StatusBadge.vue'
 
 const toastStore = useToastStore()
+const route = useRoute()
+const router = useRouter()
 
 // UI State
 const activeTab = ref<'hardware' | 'users' | 'audit'>('hardware')
@@ -151,45 +154,56 @@ function formatDate(dateStr: string | null) {
 
 onMounted(() => {
   fetchHardware()
+  
+  if (route.query.tab === 'audit') {
+    activeTab.value = 'audit'
+    if (route.query.run === 'true') {
+      handleRunAudit()
+    }
+    // Clean up query params so it doesn't run again on refresh
+    router.replace({ query: {} })
+  }
 })
 </script>
 
 <template>
   <div class="admin-container">
     <div class="header-section">
-      <h1 class="page-title">Admin Dashboard</h1>
-      <p class="subtitle">Manage hardware, users, and run AI audits.</p>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <button 
-        :class="['tab-btn', { active: activeTab === 'hardware' }]" 
-        @click="activeTab = 'hardware'"
-      >
-        Hardware
-      </button>
-      <button 
-        :class="['tab-btn', { active: activeTab === 'users' }]" 
-        @click="activeTab = 'users'"
-      >
-        Users
-      </button>
-      <button 
-        :class="['tab-btn', { active: activeTab === 'audit' }]" 
-        @click="activeTab = 'audit'"
-      >
-        AI Audit
-      </button>
+      <div class="header-content">
+        <h1 class="page-title">Hardware Management</h1>
+        <button v-if="activeTab === 'hardware'" class="primary-btn" @click="openAddForm">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add New Device
+        </button>
+      </div>
+      
+      <div class="tabs">
+        <button 
+          :class="['tab-btn', { active: activeTab === 'hardware' }]" 
+          @click="activeTab = 'hardware'"
+        >
+          Hardware
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'users' }]" 
+          @click="activeTab = 'users'"
+        >
+          Users
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'audit' }]" 
+          @click="activeTab = 'audit'"
+        >
+          AI Audit
+        </button>
+      </div>
     </div>
 
     <!-- HARDWARE MANAGEMENT -->
     <div v-if="activeTab === 'hardware'" class="tab-content">
-      <div class="section-header">
-        <h2>Hardware Inventory</h2>
-        <button class="primary-btn" @click="openAddForm">+ Add Hardware</button>
-      </div>
-
       <!-- Hardware Form Modal / Inline -->
       <div v-if="showHardwareForm" class="form-card">
         <h3>{{ isEditing ? 'Edit Hardware' : 'New Hardware' }}</h3>
@@ -234,11 +248,11 @@ onMounted(() => {
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Brand</th>
-              <th>Status</th>
-              <th>Purchase Date</th>
+              <th>Device Name</th>
+              <th class="th-center">Brand</th>
+              <th class="th-center">Serial Number</th>
+              <th class="th-center">Date Added</th>
+              <th class="th-center">Status</th>
               <th class="action-column">Actions</th>
             </tr>
           </thead>
@@ -250,20 +264,30 @@ onMounted(() => {
               <td colspan="6" class="empty-state">No hardware found.</td>
             </tr>
             <tr v-else v-for="item in hardwareItems" :key="item.id" class="table-row">
-              <td class="text-secondary">#{{ item.id }}</td>
               <td class="font-medium">{{ item.name }}</td>
-              <td>{{ item.brand }}</td>
-              <td><StatusBadge :status="item.status" /></td>
-              <td class="text-secondary">{{ formatDate(item.purchase_date) }}</td>
+              <td class="text-secondary col-center">{{ item.brand }}</td>
+              <td class="text-secondary col-center">#{{ item.id }}</td>
+              <td class="text-secondary col-center">{{ formatDate(item.purchase_date) }}</td>
+              <td class="col-center"><StatusBadge :status="item.status" /></td>
               <td class="action-column">
-                <button class="action-btn toggle-repair" @click="toggleRepair(item)" title="Toggle Repair">
-                  🔧
-                </button>
                 <button class="action-btn edit" @click="openEditForm(item)" title="Edit">
-                  ✎
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button class="action-btn toggle-repair" @click="toggleRepair(item)" title="Toggle Repair">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                  </svg>
                 </button>
                 <button class="action-btn delete" @click="removeHardware(item.id)" title="Delete">
-                  ✖
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
                 </button>
               </td>
             </tr>
@@ -274,11 +298,8 @@ onMounted(() => {
 
     <!-- USER MANAGEMENT -->
     <div v-if="activeTab === 'users'" class="tab-content">
-      <div class="section-header">
-        <h2>Create New User</h2>
-      </div>
-      
       <div class="form-card">
+        <h3>Create New User</h3>
         <form @submit.prevent="createUser" class="admin-form">
           <div class="form-group">
             <label>Email Address</label>
@@ -305,9 +326,12 @@ onMounted(() => {
 
     <!-- AI AUDIT SECTION -->
     <div v-if="activeTab === 'audit'" class="tab-content">
-      <div class="section-header">
-        <h2>System Audit</h2>
-        <button class="primary-btn audit-btn" @click="handleRunAudit" :disabled="isRunningAudit">
+      <div class="audit-header">
+        <button class="primary-btn" @click="handleRunAudit" :disabled="isRunningAudit">
+          <svg v-if="isRunningAudit" class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+          </svg>
           {{ isRunningAudit ? 'Analyzing...' : 'Run Audit' }}
         </button>
       </div>
@@ -354,56 +378,82 @@ onMounted(() => {
 .admin-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding-bottom: 3rem;
+  gap: 1.5rem;
+  width: 100%;
 }
 
 .header-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.5rem;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .page-title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  color: #111827;
   margin: 0;
-  color: #fff;
 }
 
-.subtitle {
-  color: #a0a0a0;
-  font-size: 0.95rem;
-  margin: 0;
+/* Primary Add Button */
+.primary-btn {
+  background-color: #111827;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.primary-btn:hover {
+  background-color: #374151;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
 }
 
 /* Tabs */
 .tabs {
   display: flex;
-  gap: 1rem;
-  border-bottom: 1px solid #333;
-  padding-bottom: 0;
+  gap: 2rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .tab-btn {
   background: transparent;
-  color: #a0a0a0;
+  color: #6b7280;
   border: none;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
+  margin-bottom: -1px;
 }
 
 .tab-btn:hover {
-  color: #e0e0e0;
+  color: #111827;
 }
 
 .tab-btn.active {
-  color: #646cff;
-  border-bottom: 3px solid #646cff;
+  color: #111827;
+  border-bottom: 2px solid #111827;
+  font-weight: 600;
 }
 
 .tab-content {
@@ -418,62 +468,20 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.section-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-/* Buttons */
-.primary-btn {
-  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
-  color: white;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 10px rgba(100, 108, 255, 0.3);
-}
-
-.primary-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 15px rgba(100, 108, 255, 0.4);
-}
-
-.audit-btn {
-  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-  color: #121212;
-  box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
-}
-.audit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
 /* Forms */
 .form-card {
-  background-color: rgba(30, 30, 30, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 1.5rem 2rem;
-  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .form-card h3 {
   margin-top: 0;
   margin-bottom: 1.5rem;
   font-size: 1.1rem;
+  color: #111827;
 }
 
 .admin-form {
@@ -497,24 +505,23 @@ onMounted(() => {
 .form-group label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #d0d0d0;
+  color: #374151;
 }
 
 .form-group input, .form-group select {
-  background-color: rgba(18, 18, 18, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  color: #111827;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-size: 0.95rem;
   outline: none;
   transition: all 0.2s ease;
-  font-family: inherit;
 }
 
 .form-group input:focus, .form-group select:focus {
-  border-color: #646cff;
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+  border-color: #111827;
+  background-color: #ffffff;
 }
 
 .checkbox-group label {
@@ -523,11 +530,7 @@ onMounted(() => {
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.95rem;
-}
-.checkbox-group input {
-  width: 1.2rem;
-  height: 1.2rem;
-  cursor: pointer;
+  color: #374151;
 }
 
 .form-actions {
@@ -538,9 +541,9 @@ onMounted(() => {
 }
 
 .cancel-btn {
-  background: transparent;
-  color: #a0a0a0;
-  border: 1px solid #444;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -548,13 +551,13 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .cancel-btn:hover {
-  background: #333;
-  color: #fff;
+  background: #e5e7eb;
 }
 
 .submit-btn {
-  background-color: #646cff;
+  background-color: #111827;
   color: white;
   border: none;
   padding: 0.6rem 1.2rem;
@@ -564,99 +567,109 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .submit-btn:hover {
-  background-color: #747bff;
-}
-.submit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+  background-color: #374151;
 }
 
-/* Table */
+/* Table — Single Panel */
 .table-wrapper {
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  background-color: transparent;
+  overflow: visible;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
   text-align: left;
 }
 
 .data-table th {
-  background-color: rgba(20, 20, 20, 0.8);
   padding: 1rem 1.5rem;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #a0a0a0;
-  font-weight: 600;
-  border-bottom: 1px solid #333;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
 }
 
 .data-table td {
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #2a2a2a;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.table-row {
-  transition: background-color 0.2s ease;
-}
-.table-row:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-}
+.table-row:last-child td { border-bottom: none; }
+.table-row:hover td { background-color: #fafafa; }
 
 .font-medium {
+  color: #111827;
   font-weight: 500;
-  color: #fff;
 }
 .text-secondary {
-  color: #999;
+  color: #4b5563;
+  font-size: 0.85rem;
 }
 
 .action-column {
   text-align: right;
-  min-width: 130px;
+  min-width: 110px;
 }
+
+.th-center, .col-center { text-align: center; }
 
 .empty-state {
   text-align: center;
-  padding: 3rem !important;
-  color: #777;
-  font-style: italic;
+  padding: 3rem;
+  color: #9ca3af;
 }
 
 .action-btn {
   background: transparent;
   border: none;
-  color: #999;
-  font-size: 1.1rem;
+  color: #9ca3af;
   cursor: pointer;
-  margin-left: 0.5rem;
-  transition: all 0.2s;
-  padding: 0.3rem;
-  border-radius: 4px;
+  margin-left: 0.6rem;
+  padding: 0;
+  vertical-align: middle;
+  transition: color 0.15s;
 }
-.action-btn:hover {
-  background: rgba(255,255,255,0.1);
+.icon {
+  width: 17px;
+  height: 17px;
+  display: block;
 }
-.action-btn.toggle-repair:hover { color: #f39c12; }
-.action-btn.edit:hover { color: #3498db; }
-.action-btn.delete:hover { color: #e74c3c; }
-
+.action-btn:hover { color: #374151; }
+.action-btn.delete { color: #ef4444; opacity: 0.7; }
+.action-btn.delete:hover { opacity: 1; }
 
 /* Audit Section */
+.audit-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .audit-placeholder {
   text-align: center;
   padding: 4rem 2rem;
-  background-color: rgba(30, 30, 30, 0.4);
-  border: 1px dashed #444;
+  background-color: #f9fafb;
+  border: 1px dashed #d1d5db;
   border-radius: 12px;
-  color: #888;
+  color: #6b7280;
 }
 
 .placeholder-icon {
@@ -665,35 +678,35 @@ onMounted(() => {
 }
 
 .audit-summary-card {
-  background-color: rgba(30, 30, 30, 0.6);
-  border-left: 4px solid #646cff;
+  background-color: #ffffff;
+  border-radius: 12px;
   padding: 1.5rem;
-  border-radius: 8px;
+  border: 1px solid #e5e7eb;
   margin-bottom: 2rem;
 }
 .audit-summary-card h3 {
   margin-top: 0;
   margin-bottom: 0.5rem;
-  color: #e0e0e0;
+  color: #111827;
 }
 .audit-summary-card p {
   margin: 0;
-  color: #b0b0b0;
+  color: #4b5563;
   line-height: 1.5;
 }
 
 .issues-title {
   margin-bottom: 1rem;
   font-size: 1.1rem;
-  color: #e0e0e0;
+  color: #111827;
 }
 
 .no-issues {
-  background-color: rgba(46, 204, 113, 0.1);
-  color: #2ecc71;
+  background-color: #ffffff;
+  color: #111827;
   padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(46, 204, 113, 0.2);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -707,15 +720,11 @@ onMounted(() => {
 }
 
 .issue-card {
-  background-color: rgba(30, 30, 30, 0.6);
-  border-radius: 8px;
+  background-color: #ffffff;
+  border-radius: 12px;
   padding: 1.25rem;
-  border-left: 4px solid #444;
+  border: 1px solid #e5e7eb;
 }
-
-.severity-critical { border-left-color: #e74c3c; }
-.severity-warning { border-left-color: #f1c40f; }
-.severity-info { border-left-color: #3498db; }
 
 .issue-header {
   display: flex;
@@ -729,25 +738,21 @@ onMounted(() => {
   font-weight: 700;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
+  background-color: #f3f4f6;
+  color: #374151;
 }
-.severity-critical .issue-badge { background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; }
-.severity-warning .issue-badge { background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; }
-.severity-info .issue-badge { background-color: rgba(52, 152, 219, 0.2); color: #3498db; }
 
 .issue-hardware {
   font-weight: 600;
-  color: #fff;
+  color: #111827;
 }
 
 .issue-body p {
   margin: 0.25rem 0;
   font-size: 0.95rem;
-  color: #ccc;
+  color: #4b5563;
 }
 .issue-body strong {
-  color: #e0e0e0;
-}
-.issue-rec {
-  color: #2ecc71 !important;
+  color: #111827;
 }
 </style>

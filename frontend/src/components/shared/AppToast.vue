@@ -41,11 +41,12 @@ const toastStore = useToastStore()
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   font-weight: 500;
-  color: white;
-  background-color: #2c2c2c;
-  border-left: 5px solid transparent;
+  color: #111827;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid transparent;
 }
 
 .toast-message {
@@ -54,29 +55,30 @@ const toastStore = useToastStore()
 }
 
 .toast-success {
-  border-left-color: #2ecc71;
+  border-left-color: #10b981;
 }
 .toast-error {
-  border-left-color: #e74c3c;
+  border-left-color: #ef4444;
 }
 .toast-info {
-  border-left-color: #3498db;
+  border-left-color: #3b82f6;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: white;
+  color: #9ca3af;
   font-size: 1.5rem;
   cursor: pointer;
   opacity: 0.6;
   padding: 0 0 0 12px;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease;
   display: flex;
   align-items: center;
 }
 .close-btn:hover {
   opacity: 1;
+  color: #374151;
 }
 
 /* Transitions */

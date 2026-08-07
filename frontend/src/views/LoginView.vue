@@ -43,17 +43,27 @@ async function handleLogin() {
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h1 class="title">Welcome Back</h1>
-      <p class="subtitle">Please enter your details to sign in.</p>
+      <div class="logo-wrapper">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+      </div>
+
+      <div class="header-text">
+        <h1 class="title">Welcome back</h1>
+        <p class="subtitle">Sign in to your account</p>
+      </div>
       
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="email">Email address</label>
+          <label for="email">Email (company domain only)</label>
           <input 
             id="email"
             type="email" 
             v-model="email" 
-            placeholder="admin@example.com"
+            placeholder="name@booksy.com"
             :disabled="isSubmitting"
             required
           />
@@ -65,14 +75,14 @@ async function handleLogin() {
             id="password"
             type="password" 
             v-model="password" 
-            placeholder="••••••••"
+            placeholder="Enter your password"
             :disabled="isSubmitting"
             required
           />
         </div>
         
         <button type="submit" class="submit-btn" :disabled="isSubmitting">
-          {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
+          {{ isSubmitting ? 'Signing in...' : 'Login' }}
         </button>
       </form>
     </div>
@@ -84,103 +94,116 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 150px);
+  min-height: 100vh;
 }
 
 .login-card {
-  background-color: rgba(30, 30, 30, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 3rem 2.5rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 2rem 2.5rem 2.5rem;
   width: 100%;
-  max-width: 440px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  max-width: 420px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.logo-wrapper {
+  background-color: #e5e7eb;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  color: #111827;
+}
+
+.header-text {
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  color: #fff;
-  margin-bottom: 0.5rem;
-  text-align: center;
-  letter-spacing: -0.02em;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
 }
 
 .subtitle {
-  color: #a0a0a0;
-  font-size: 0.95rem;
-  text-align: center;
-  margin-bottom: 2.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #d0d0d0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #111827;
 }
 
 input {
-  background-color: rgba(18, 18, 18, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
-  padding: 0.85rem 1rem;
-  border-radius: 10px;
-  font-size: 1rem;
+  background-color: #f3f4f6;
+  border: none;
+  color: #111827;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
+input::placeholder {
+  color: #9ca3af;
+}
+
 input:focus {
   outline: none;
-  border-color: #646cff;
-  background-color: #1a1a1a;
-  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.2);
+  background-color: #e5e7eb;
 }
 
 input:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .submit-btn {
   margin-top: 0.5rem;
-  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
-  color: white;
+  background-color: #0f172a;
+  color: #ffffff;
   border: none;
-  padding: 0.9rem;
-  border-radius: 10px;
-  font-size: 1.05rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(100, 108, 255, 0.3);
+  transition: background-color 0.2s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(100, 108, 255, 0.4);
-}
-
-.submit-btn:active:not(:disabled) {
-  transform: translateY(1px);
+  background-color: #1e293b;
 }
 
 .submit-btn:disabled {
-  background: #3a3a3a;
-  box-shadow: none;
+  background-color: #475569;
   cursor: not-allowed;
   opacity: 0.8;
 }

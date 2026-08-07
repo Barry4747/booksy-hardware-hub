@@ -96,8 +96,7 @@ function formatDate(dateStr: string | null) {
 .rentals-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding-bottom: 3rem;
+  gap: 1.25rem;
 }
 
 .header-section {
@@ -107,64 +106,58 @@ function formatDate(dateStr: string | null) {
 }
 
 .page-title {
-  font-size: 1.75rem;
+  font-size: 1.35rem;
   font-weight: 700;
+  color: #111827;
   margin: 0;
-  color: #fff;
 }
 
 .subtitle {
-  color: #a0a0a0;
+  color: #6b7280;
   font-size: 0.95rem;
   margin: 0;
 }
 
-/* Table styles */
+/* Table — Single Panel */
 .table-wrapper {
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  background-color: transparent;
+  overflow: visible;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
   text-align: left;
 }
 
 .data-table th {
-  background-color: rgba(20, 20, 20, 0.8);
   padding: 1rem 1.5rem;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #a0a0a0;
-  font-weight: 600;
-  border-bottom: 1px solid #333;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
 }
 
 .data-table td {
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #2a2a2a;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.table-row {
-  transition: background-color 0.2s ease;
-}
-
-.table-row:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-}
+.table-row:last-child td { border-bottom: none; }
+.table-row:hover td { background-color: #fafafa; }
 
 .font-medium {
+  color: #111827;
   font-weight: 500;
-  color: #fff;
 }
-
 .text-secondary {
-  color: #999;
+  color: #4b5563;
+  font-size: 0.85rem;
 }
 
 .action-column {
@@ -175,52 +168,46 @@ function formatDate(dateStr: string | null) {
 .empty-state {
   text-align: center;
   padding: 3rem !important;
-  color: #777;
-  font-style: italic;
+  color: #9ca3af;
 }
 
-/* Badges */
 .badge-active {
-  background-color: rgba(46, 204, 113, 0.15);
-  color: #2ecc71;
-  padding: 0.3rem 0.6rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid rgba(46, 204, 113, 0.3);
 }
 
 .badge-returned {
-  background-color: rgba(149, 165, 166, 0.15);
-  color: #95a5a6;
-  padding: 0.3rem 0.6rem;
+  background-color: #111827;
+  color: #ffffff;
+  padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid rgba(149, 165, 166, 0.3);
 }
 
-/* Return Button */
 .return-btn {
-  background-color: transparent;
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.5);
-  padding: 0.4rem 1rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  background-color: #111827;
+  color: #ffffff;
+  border: none;
+  padding: 0.4rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .return-btn:hover {
-  background-color: #e74c3c;
-  color: #121212;
+  background-color: #374151;
 }
 
 .returned-date {
   font-size: 0.85rem;
-  color: #777;
+  color: #6b7280;
   font-style: italic;
 }
 </style>

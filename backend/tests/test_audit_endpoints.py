@@ -1,4 +1,8 @@
-def test_run_audit_admin(client, test_admin):
+from unittest.mock import patch
+
+@patch("app.services.audit.AuditService.run_audit")
+def test_run_audit_admin(mock_run_audit, client, test_admin):
+    mock_run_audit.return_value = {"summary": "Test", "issues": []}
     client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
     
     resp = client.post("/api/audit")
@@ -17,7 +21,9 @@ def test_run_audit_unauthorized(client):
     resp = client.post("/api/audit")
     assert resp.status_code == 401
 
-def test_run_audit_rate_limit(client, test_admin):
+@patch("app.services.audit.AuditService.run_audit")
+def test_run_audit_rate_limit(mock_run_audit, client, test_admin):
+    mock_run_audit.return_value = {"summary": "Test", "issues": []}
     from app.core.config import settings
     from app.core.rate_limit import limiter
     
