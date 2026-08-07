@@ -139,3 +139,15 @@
 
 **Any correction I had to make:**
 - No corrections were necessary.
+
+## Users Router (Admin)
+**Prompt used:**
+> now create endpoint for creating users, accessible only by admin
+
+**What AI decided and why:**
+- **`POST /api/users`:** Created a new endpoint under `app/api/routers/users.py`. Secured it with the `require_admin` dependency so only admins can execute it.
+- **`UserCreate` Schema:** Used the `UserCreate` schema already present in `app/schemas/user.py` to strongly type and validate the incoming request (ensuring email format via `EmailStr` and a required password string).
+- **Integration Tests:** Created `tests/test_users_endpoints.py` testing success paths (admin access), forbidden paths (regular user access), unauthorized paths (no tokens), and conflict paths (duplicate emails). Test coverage for routers remains intact at 100%.
+
+**Any correction I had to make:**
+- No corrections were necessary.

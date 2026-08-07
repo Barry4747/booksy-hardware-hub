@@ -11,7 +11,8 @@
 - Service layer (`app/services/auth.py`)
 - Dependency injection (`app/api/dependencies/core.py`, `app/api/dependencies/auth.py`)
 - API Auth Routers (`app/api/routers/auth.py`, `app/main.py`)
-- Custom exception handling (`app/exceptions/auth.py`)
+- Admin Users Router (`app/api/routers/users.py`)
+- Custom exception handling (`app/exceptions/auth.py`, `app/exceptions/users.py`)
 - Unit and integration test suite (`tests/` with 99% coverage)
 
 ## Shortcuts

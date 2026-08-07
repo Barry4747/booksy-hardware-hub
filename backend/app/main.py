@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.api.routers import auth
+from app.api.routers import auth, users
 from app.exceptions.auth import AuthError
 from app.exceptions.users import UserError
 
@@ -19,3 +19,4 @@ async def user_exception_handler(request: Request, exc: UserError):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(users.router, prefix="/api/users", tags=["users"])
