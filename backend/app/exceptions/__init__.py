@@ -19,6 +19,9 @@ from .rentals import (
     RentalNotFoundError,
     HardwareUnavailableError,
 )
+from .audit import (
+    AuditError,
+)
 
 __all__ = [
     "AuthError",
