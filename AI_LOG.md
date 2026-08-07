@@ -89,3 +89,12 @@
 
 **Any correction I had to make:**
 - **EmailStr in UserLogin:** Corrected the `UserLogin` schema to use `EmailStr` instead of `str` for the email field, ensuring incoming login requests are strictly validated before reaching the service layer.
+
+## Auth Dependencies Refactoring
+**Prompt used:**
+> In backend/app/api/dependencies/auth.py implement: get_current_user: reads access token from HttpOnly cookie, decodes it with python-jose, returns User object or raises 401. require_admin: depends on get_current_user, raises 403 if user is not admin. Both dependencies must be importable and usable via FastAPI Depends(). Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Refactored `get_current_user`:** Moved this function out of `core.py` and into the newly created `app/api/dependencies/auth.py`. This improves separation of concerns — `core.py` handles general DI (like DB and services), while `auth.py` strictly manages request-level authentication states.
+- **Created `require_admin`:** Implemented a new dependency relying on `Depends(get_current_user)` that evaluates the `is_admin` boolean flag. This provides an elegant, reusable way to secure admin-only routes natively within FastAPI.
+- **Updated routers:** Re-wired `auth.py` router to import the relocated `get_current_user` dependency from the correct module without disrupting its functionality.
