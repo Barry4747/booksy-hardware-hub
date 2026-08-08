@@ -378,3 +378,88 @@
 - **Sidebar Integration:** Completely overhauled `AppNavbar.vue` to function as a fixed, left-aligned sidebar containing SVG icons (Box for logo, List, Clock, Settings) with exact typography matching the wireframe layout.
 - **Dashboard Refactor:** Re-implemented the template in `DashboardView.vue` with scoped CSS mimicking the flat, clean interface from the design. Styled the "Ask AI..." input bar, pagination, and data table structure with exact colors and border widths.
 - **StatusBadges:** Repainted `StatusBadge.vue` to match wireframe exactly (`Available` = black bg, `In Use`/Rented = gray text/bg, `Repair` = red bg). Logic and API integrations were kept fully intact, altering strictly the visual surface layer.
+
+## Critical Bugfix: Strict Return Logic
+**Prompt used:**
+> In backend/app/services/rentals.py fix the return_rental method... Replace it with a strict one-way state machine. Remove any endpoint or service method that allows updating rental fields other than this specific transition. Write tests. Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Service Strictness:** Removed the generic `update_rental` method and replaced it entirely with `return_rental`. It explicitly checks ownership (throwing a `403`), checks if it's already returned (throwing a `409`), and atomically sets `returned_at` and `HardwareStatus.AVAILABLE` using a proper transactional unit of work.
+- **RESTful Endpoint Adjustments:** Replaced `PATCH /api/rentals/{id}` with a specific business action endpoint `POST /api/rentals/{id}/return`. The generic PATCH allowed clients too much power to overwrite internal system fields (like resetting the status to `ACTIVE` without taking the hardware offline).
+- **Frontend Sync:** Updated `frontend/src/services/rentals.ts` and `frontend/src/views/MyRentalsView.vue` to point to the new `POST /return` endpoint instead of relying on `PATCH`.
+- **Testing (`tests/test_rental_service.py` & `tests/test_rental_endpoints.py`):** Rewrote the tests to cover the strict transition and the specific HTTP status codes (403 and 409) mandated by the new logic.
+
+## Feature: User Deletion with Cascade Logic
+**Prompt used:**
+> In backend/app/services/users.py implement delete_user with this logic: Fetch user by id, raise UserNotFoundException (404) if not found... Check if user has any active rentals... For each active rental: set returned_at = datetime.now(timezone.utc) and set hardware.status = HardwareStatus.AVAILABLE... Then delete the user... In frontend/src/views/AdminView.vue: Add Delete button next to each user...
+
+**What AI decided and why:**
+- **SQLAlchemy Cascade Fix:** Discovered that the `User` model was missing `cascade="all, delete-orphan"` on the `rentals` relationship. Fixed this first, so when a user is deleted, their associated inactive rentals are cleanly removed instead of throwing SQLite `IntegrityError` (NOT NULL constraint failed).
+- **Service Logic:** Implemented `delete_user` in `UserService` that loops over `user.rentals`. If any rental is active, it forcefully returns the hardware, flips the hardware status back to `AVAILABLE`, and increments a `force_closed` counter.
+- **API Endpoint:** Added `DELETE /api/users/{id}` (admin only) and `GET /api/users` (to fetch the user list for the frontend). They return strongly typed schemas including `DeleteUserResponse` with dynamic messaging depending on the `force_closed_rentals` count.
+- **Frontend Integration:** Added `getAllUsers` and `deleteUser` to a new `frontend/src/services/users.ts`. Rewrote the Users tab in `AdminView.vue` to fetch the list on mount, display a stylish table, and include a destructive delete button with a browser `confirm()` dialogue. Successfully wired up warning toasts if active rentals had to be force-closed.
+- **Testing:** Added 5 comprehensive tests to `test_users_endpoints.py` simulating deleting a user with no rentals, deleting one with active rentals, deleting one with already returned rentals, handling 404s, and guarding against non-admins (403).
+
+## SQLite Foreign Keys Enforcement
+**Prompt used:**
+> In backend/app/db/base.py add a SQLAlchemy event listener that executes PRAGMA foreign_keys=ON on every new connection... Write a test that verifies foreign keys are enforced: Try to insert a Rental with a non-existent hardware_id.
+
+**What AI decided and why:**
+- **SQLAlchemy Event Listener:** SQLite disables foreign key enforcement by default for backwards compatibility. Added an `@event.listens_for(Engine, "connect")` listener in `app/db/base.py` that executes `PRAGMA foreign_keys=ON` directly on the underlying `sqlite3.Connection` every time a new DBAPI connection is checked out of the pool.
+- **Testing:** Added `test_rental_repository_foreign_key_enforcement` in `tests/test_rental_repository.py`. When attempting to insert a rental with `hardware_id=9999`, it correctly raises an `IntegrityError` due to the strict enforcement, preventing orphaned records.
+
+## Performance: SQLAlchemy N+1 Query Optimization
+**Prompt used:**
+> In backend/app/repositories/rentals.py add joinedload to all queries that return rentals with nested hardware data... Do not write new tests for this — it is a performance fix... Document it in AI_LOG.
+
+**What AI decided and why:**
+- **Eager Loading with `joinedload`:** When the `Rental` model was being returned via the API, Pydantic's `orm_mode` would lazily load the related `Hardware` record, causing an N+1 query problem (one initial query for N rentals, followed by N separate queries for each hardware item). 
+- **Repository Update:** Modified `get_by_id` and `list` methods in `backend/app/repositories/rentals.py` to use `.options(joinedload(Rental.hardware))`. This forces SQLAlchemy to fetch the rental and its hardware in a single `JOIN` query, massively improving the endpoint's response time and reducing database load.
+
+## Performance: Async API Call Unblocking
+**Prompt used:**
+> In backend/app/services/audit.py wrap the blocking Gemini API call using FastAPI's run_in_threadpool... Update the audit router endpoint to be async if it is not already.
+
+**What AI decided and why:**
+- **Threadpool Offloading:** The Google GenAI client performs synchronous, blocking network requests. Under heavy load, calling it directly inside a standard synchronous route (or even an `async def` route without `await`) would freeze the entire Uvicorn worker process (the event loop) while waiting for Google's servers to respond.
+- **The Fix:** Rewrote the `run_audit` method in `AuditService` to be `async` and wrapped the blocking API call in FastAPI's `run_in_threadpool`. Converted `POST /api/audit` router to `async def` and `await`ed the service call.
+- **Trade-off:** This introduces a slight overhead from thread context switching, but it prevents event loop starvation. Now, while the Gemini network request is executing on a separate background thread, FastAPI's main event loop is completely free to handle dozens of other incoming HTTP requests simultaneously.
+
+## Concurrency: Axios Interceptor Race Condition Lock
+**Prompt used:**
+> In frontend/src/services/api.ts refactor the 401 interceptor to use a lock pattern... This ensures only one refresh request is made regardless of how many concurrent 401 errors occur.
+
+**What AI decided and why:**
+- **The Problem (Race Condition):** If the frontend fired multiple API requests simultaneously (e.g. fetching hardware AND fetching users at the exact same time when a view mounts) and the JWT access token was expired, both requests would fail with 401. The old Axios interceptor would independently catch both 401s and fire TWO separate `/api/auth/refresh` requests. The first would succeed and rotate the token, making the second one fail (since the old refresh token is no longer valid or a race condition on the DB occurs), immediately logging the user out.
+- **The Fix (Lock Pattern):** Implemented an `isRefreshing` lock and a subscriber queue in `frontend/src/services/api.ts`. When the first 401 occurs, it sets the lock and initiates the refresh. When the second 401 occurs, it sees the lock is active and suspends itself by returning a `Promise` that subscribes to the queue. Once the single refresh request completes, it notifies all subscribers in the queue to retry their original requests with the new token.
+
+## API Abstraction: Centralizing User Calls
+**Prompt used:**
+> In frontend/src/views/AdminView.vue replace the direct axios call with an import and call to createUser from users.ts. This keeps all API calls in the service layer and out of components.
+
+**What AI decided and why:**
+- **Refactoring:** Replaced the direct `api.post('/api/users')` call inside `AdminView.vue` with `createUser` imported from `frontend/src/services/users.ts`. This abstracts the HTTP request logic away from the UI components, following the separation of concerns principle already established for hardware and rental API calls.
+
+## UI Resiliency: Double-Click Protection on Rentals
+**Prompt used:**
+> In frontend/src/views/DashboardView.vue add protection against double-clicking the Rent button...
+
+**What AI decided and why:**
+- **The Problem:** If a user clicks the "Rent" button multiple times rapidly, the frontend would fire several concurrent POST requests to the backend, potentially attempting to rent the same hardware multiple times before the server responds and updates the UI state.
+- **The Fix:** Implemented a reactive `Set<number>` called `rentingIds` to track in-flight requests on a per-item basis. When a user clicks "Rent", the item's ID is added to the Set and the button immediately disables itself (showing "Renting..."). Once the API resolves (success or failure), the ID is removed from the Set in the `finally` block, restoring the button's state.
+
+## UX Enhancement: Audit to Hardware Edit Navigation
+**Prompt used:**
+> act as a senior developer. in frontend, every audit panel with the information about what is wrong should have edit icon, that takes the user to hardware section in admin panel, with edit view opened
+
+**What AI decided and why:**
+- **Navigation Flow:** To improve the IT Administrator's workflow, fixing issues flagged by the AI Audit should be frictionless.
+- **Implementation:** Added a `goToHardwareEdit` function in `AdminView.vue` and an edit icon button to the `issue-header` of each audit issue card. When clicked, it searches the pre-loaded `hardwareItems` for the matching ID, switches `activeTab` to `'hardware'`, and invokes `openEditForm(item)` to immediately open the edit modal with the flagged hardware's data pre-populated.
+
+## Role-Based Feature: Admin Rentals View Toggle
+**Prompt used:**
+> add the possibility to show 'My rentals' instead of all of them for admins
+
+**What AI decided and why:**
+- **The Problem:** The `GET /api/rentals` endpoint natively returns ALL rentals if the requester is an admin, but the UI component `MyRentalsView.vue` was strictly designed to display only the user's rentals (hence the name).
+- **The Fix:** Updated the `getMyRentals` service function to accept an optional `userId`. In `MyRentalsView.vue`, added a reactive toggle `showOnlyMine` (defaulting to `true` to preserve the "My Rentals" feel). When an admin unchecks it, `fetchRentals` passes `undefined` for `userId`, prompting the backend to return all system rentals. A dynamic `User ID` column is also injected into the table when viewing all rentals to help admins identify who rented what.
