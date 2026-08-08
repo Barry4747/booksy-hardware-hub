@@ -2,12 +2,15 @@ from typing import Any
 from sqlalchemy.orm import Session
 from app.repositories.hardware import HardwareRepository
 from app.schemas.hardware import HardwareCreate, HardwareUpdate, HardwareResponse
-from app.exceptions.hardware import HardwareNotFoundError
+from app.exceptions.hardware import HardwareNotFoundError, InvalidStatusTransitionError
+from app.repositories.rentals import RentalRepository
+from app.models.hardware import HardwareStatus
 
 class HardwareService:
-    def __init__(self, db: Session, hw_repo: HardwareRepository):
+    def __init__(self, db: Session, hw_repo: HardwareRepository, rental_repo: RentalRepository):
         self.db = db
         self.hw_repo = hw_repo
+        self.rental_repo = rental_repo
 
     def get_hardware(self, id: int) -> HardwareResponse:
         hw = self.hw_repo.get_by_id(id)
@@ -28,6 +31,18 @@ class HardwareService:
         hw = self.hw_repo.get_by_id(id)
         if not hw:
             raise HardwareNotFoundError()
+            
+        if hardware_in.status == HardwareStatus.IN_USE:
+            raise InvalidStatusTransitionError(
+                detail="Cannot set status to 'In Use' directly. Use the rental endpoint instead."
+            )
+            
+        if hardware_in.status == HardwareStatus.REPAIR:
+            active_rental = self.rental_repo.get_active_by_hardware(id)
+            if active_rental:
+                raise InvalidStatusTransitionError(
+                    detail="Cannot mark as Repair: hardware has an active rental. Force-return it first."
+                )
         
         update_data = hardware_in.model_dump(exclude_unset=True)
         if update_data:

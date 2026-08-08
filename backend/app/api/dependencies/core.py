@@ -33,9 +33,10 @@ def get_user_service(
 
 def get_hardware_service(
     db: Session = Depends(get_db),
-    hw_repo: HardwareRepository = Depends(get_hardware_repository)
+    hw_repo: HardwareRepository = Depends(get_hardware_repository),
+    rental_repo: RentalRepository = Depends(get_rental_repository)
 ) -> HardwareService:
-    return HardwareService(db=db, hw_repo=hw_repo)
+    return HardwareService(db=db, hw_repo=hw_repo, rental_repo=rental_repo)
 
 def get_rental_service(
     db: Session = Depends(get_db),

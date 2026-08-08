@@ -68,3 +68,43 @@ def test_delete_hardware_admin(client, test_admin):
     
     get_resp = client.get(f"/api/hardware/{hw_id}")
     assert get_resp.status_code == 404
+
+def test_update_hardware_status_in_use_forbidden(client, test_admin):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    hw_resp = client.post("/api/hardware", json={"name": "XPS", "brand": "Dell"})
+    hw_id = hw_resp.json()["id"]
+    
+    update_resp = client.put(f"/api/hardware/{hw_id}", json={"status": "In Use"})
+    assert update_resp.status_code == 409
+
+def test_update_hardware_status_repair_when_in_use_forbidden(client, test_admin, test_user):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    hw_resp = client.post("/api/hardware", json={"name": "XPS", "brand": "Dell"})
+    hw_id = hw_resp.json()["id"]
+    
+    # user rents it
+    client.post("/api/auth/login", json={"email": test_user.email, "password": "password123"})
+    client.post("/api/rentals", json={"hardware_id": hw_id})
+    
+    # admin tries to set to repair
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    update_resp = client.put(f"/api/hardware/{hw_id}", json={"status": "Repair"})
+    assert update_resp.status_code == 409
+
+def test_update_hardware_status_repair_when_available_success(client, test_admin):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    hw_resp = client.post("/api/hardware", json={"name": "XPS", "brand": "Dell"})
+    hw_id = hw_resp.json()["id"]
+    
+    update_resp = client.put(f"/api/hardware/{hw_id}", json={"status": "Repair"})
+    assert update_resp.status_code == 200
+    assert update_resp.json()["status"] == "Repair"
+
+def test_update_hardware_status_available_when_repair_success(client, test_admin):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    hw_resp = client.post("/api/hardware", json={"name": "XPS", "brand": "Dell", "status": "Repair"})
+    hw_id = hw_resp.json()["id"]
+    
+    update_resp = client.put(f"/api/hardware/{hw_id}", json={"status": "Available"})
+    assert update_resp.status_code == 200
+    assert update_resp.json()["status"] == "Available"
