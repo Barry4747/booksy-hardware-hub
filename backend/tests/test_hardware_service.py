@@ -89,3 +89,35 @@ def test_list_hardware(db_session):
     
     items = service.list_hardware(limit=10)
     assert len(items) >= 2
+
+def test_cannot_set_status_to_in_use_directly(db_session):
+    from app.exceptions.hardware import InvalidStatusTransitionError
+    repo = HardwareRepository(db_session)
+    rental_repo = RentalRepository(db_session)
+    service = HardwareService(db_session, repo, rental_repo)
+    
+    hw_in = HardwareCreate(name="MacBook", brand="Apple", status=HardwareStatus.AVAILABLE)
+    hw = service.create_hardware(hw_in)
+    
+    update_in = HardwareUpdate(status=HardwareStatus.IN_USE)
+    with pytest.raises(InvalidStatusTransitionError):
+        service.update_hardware(hw.id, update_in)
+
+def test_cannot_set_repair_when_hardware_rented(db_session, test_user):
+    from app.exceptions.hardware import InvalidStatusTransitionError
+    from app.services.rentals import RentalService
+    
+    repo = HardwareRepository(db_session)
+    rental_repo = RentalRepository(db_session)
+    service = HardwareService(db_session, repo, rental_repo)
+    rental_service = RentalService(db_session, rental_repo, repo)
+    
+    hw_in = HardwareCreate(name="MacBook", brand="Apple", status=HardwareStatus.AVAILABLE)
+    hw = service.create_hardware(hw_in)
+    
+    # Rent it
+    rental_service.create_rental(hw.id, test_user.id)
+    
+    update_in = HardwareUpdate(status=HardwareStatus.REPAIR)
+    with pytest.raises(InvalidStatusTransitionError):
+        service.update_hardware(hw.id, update_in)

@@ -109,7 +109,7 @@ def test_update_hardware_status_available_when_repair_success(client, test_admin
     assert update_resp.status_code == 200
     assert update_resp.json()["status"] == "Available"
 
-def test_delete_in_use_hardware_forbidden(client, test_admin, test_user):
+def test_delete_in_use_hardware_returns_409(client, test_admin, test_user):
     # Admin creates hardware
     client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
     hw_resp = client.post("/api/hardware", json={"name": "XPS", "brand": "Dell"})
