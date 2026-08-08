@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getMyRentals, returnRental } from '../services/rentals'
 import { useToastStore } from '../stores/toast'
+import { useAuthStore } from '../stores/auth'
 import type { Rental } from '../types'
 
 const toastStore = useToastStore()
+const authStore = useAuthStore()
 
 const rentals = ref<Rental[]>([])
 const loading = ref(false)
+const showOnlyMine = ref(true) // Default to true so it behaves like 'My Rentals' by default
 
 async function fetchRentals() {
   loading.value = true
   try {
-    rentals.value = await getMyRentals()
+    const fetchUserId = (authStore.isAdmin && !showOnlyMine.value) ? undefined : authStore.user?.id
+    rentals.value = await getMyRentals(fetchUserId)
   } catch (error: any) {
     toastStore.add('Failed to load your rentals', 'error')
   } finally {
@@ -43,8 +47,16 @@ function formatDate(dateStr: string | null) {
 <template>
   <div class="rentals-container">
     <div class="header-section">
-      <h1 class="page-title">My Rentals</h1>
-      <p class="subtitle">Manage the hardware you currently have checked out.</p>
+      <div class="header-title-row">
+        <h1 class="page-title">{{ authStore.isAdmin && !showOnlyMine ? 'All Rentals' : 'My Rentals' }}</h1>
+        <div v-if="authStore.isAdmin" class="admin-toggle">
+          <label class="toggle-label">
+            <input type="checkbox" v-model="showOnlyMine" @change="fetchRentals" />
+            Show only my rentals
+          </label>
+        </div>
+      </div>
+      <p class="subtitle">Manage the hardware currently checked out.</p>
     </div>
 
     <div class="table-wrapper">
@@ -53,6 +65,7 @@ function formatDate(dateStr: string | null) {
           <tr>
             <th>Device Name</th>
             <th>Brand</th>
+            <th v-if="authStore.isAdmin && !showOnlyMine">User ID</th>
             <th>Rented At</th>
             <th>Status</th>
             <th class="action-column">Action</th>
@@ -60,14 +73,15 @@ function formatDate(dateStr: string | null) {
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td colspan="5" class="empty-state">Loading your rentals...</td>
+            <td :colspan="authStore.isAdmin && !showOnlyMine ? 6 : 5" class="empty-state">Loading rentals...</td>
           </tr>
           <tr v-else-if="rentals.length === 0">
-            <td colspan="5" class="empty-state">You haven't rented any hardware yet.</td>
+            <td :colspan="authStore.isAdmin && !showOnlyMine ? 6 : 5" class="empty-state">No rentals found.</td>
           </tr>
           <tr v-else v-for="rental in rentals" :key="rental.id" class="table-row">
             <td class="font-medium">{{ rental.hardware.name }}</td>
             <td class="text-secondary">{{ rental.hardware.brand }}</td>
+            <td class="text-secondary" v-if="authStore.isAdmin && !showOnlyMine">User #{{ rental.user_id }}</td>
             <td class="text-secondary">{{ formatDate(rental.rented_at) }}</td>
             <td>
               <span v-if="rental.returned_at" class="badge-returned">Returned</span>
@@ -116,6 +130,27 @@ function formatDate(dateStr: string | null) {
   color: #6b7280;
   font-size: 0.95rem;
   margin: 0;
+}
+
+.header-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
 }
 
 /* Table — Single Panel */

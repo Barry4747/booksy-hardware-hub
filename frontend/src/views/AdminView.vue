@@ -187,6 +187,16 @@ async function handleRunAudit() {
   }
 }
 
+function goToHardwareEdit(hardwareId: number) {
+  const item = hardwareItems.value.find(h => h.id === hardwareId)
+  if (item) {
+    activeTab.value = 'hardware'
+    openEditForm(item)
+  } else {
+    toastStore.add('Hardware not found in current list', 'warning')
+  }
+}
+
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString()
@@ -211,7 +221,7 @@ onMounted(() => {
   <div class="admin-container">
     <div class="header-section">
       <div class="header-content">
-        <h1 class="page-title">Hardware Management</h1>
+        <h1 class="page-title">Admin Panel</h1>
         <button v-if="activeTab === 'hardware'" class="primary-btn" @click="openAddForm">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -440,6 +450,12 @@ onMounted(() => {
             <div class="issue-header">
               <span class="issue-badge">{{ issue.severity.toUpperCase() }}</span>
               <span class="issue-hardware">Hardware #{{ issue.hardware_id }}: {{ issue.hardware_name }}</span>
+              <button class="action-btn edit" style="margin-left: auto" @click="goToHardwareEdit(issue.hardware_id)" title="Edit Hardware">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
             </div>
             <div class="issue-body">
               <p class="issue-desc"><strong>Issue:</strong> {{ issue.issue }}</p>

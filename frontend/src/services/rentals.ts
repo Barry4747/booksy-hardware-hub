@@ -11,7 +11,8 @@ export async function returnRental(rentalId: number) {
   return data
 }
 
-export async function getMyRentals() {
-  const { data } = await api.get<Rental[]>('/api/rentals')
+export async function getMyRentals(userId?: number) {
+  const params = userId ? { user_id: userId } : undefined
+  const { data } = await api.get<Rental[]>('/api/rentals', { params })
   return data
 }
