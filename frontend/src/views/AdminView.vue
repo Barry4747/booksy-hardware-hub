@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getAll, create, update, remove } from '../services/hardware'
 import { runAudit } from '../services/audit'
-import { getAllUsers, deleteUser } from '../services/users'
+import { getAllUsers, deleteUser, createUser as apiCreateUser } from '../services/users'
 import api from '../services/api'
 import { useToastStore } from '../stores/toast'
 import { useAuthStore } from '../stores/auth'
@@ -136,8 +136,7 @@ async function fetchUsers() {
 async function createUser() {
   isSubmittingUser.value = true
   try {
-    // We can also use createUser from users.ts here instead of api.post directly, but api.post is fine.
-    await api.post('/api/users', userForm.value)
+    await apiCreateUser(userForm.value)
     toastStore.add('User created successfully', 'success')
     userForm.value = { email: '', password: '', is_admin: false }
     await fetchUsers()
