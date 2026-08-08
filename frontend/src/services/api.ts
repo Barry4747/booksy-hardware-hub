@@ -6,6 +6,18 @@ const api = axios.create({
   withCredentials: true
 })
 
+let isRefreshing = false
+let refreshSubscribers: ((success: boolean) => void)[] = []
+
+function subscribeToRefresh(callback: (success: boolean) => void) {
+  refreshSubscribers.push(callback)
+}
+
+function notifySubscribers(success: boolean) {
+  refreshSubscribers.forEach(cb => cb(success))
+  refreshSubscribers = []
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -15,18 +27,37 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          subscribeToRefresh((success) => {
+            if (success) {
+              resolve(api(originalRequest))
+            } else {
+              reject(error)
+            }
+          })
+        })
+      }
+
+      isRefreshing = true
+
       try {
         // Attempt to refresh the token
-        // Use a new axios instance or generic axios to avoid interceptor loops
         await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
           {},
           { withCredentials: true }
         )
         
-        // If refresh succeeds, retry the original request
+        isRefreshing = false
+        notifySubscribers(true)
+        
+        // Retry the original request
         return api(originalRequest)
       } catch (refreshError) {
+        isRefreshing = false
+        notifySubscribers(false)
+        
         // If refresh fails, clear local user state and redirect to login
         const { useAuthStore } = await import('../stores/auth')
         const authStore = useAuthStore()
