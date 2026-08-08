@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getAll } from '../services/hardware'
@@ -65,13 +65,19 @@ function toggleSort(field: string) {
   }
 }
 
+const rentingIds = reactive(new Set<number>())
+
 async function handleRent(id: number) {
+  if (rentingIds.has(id)) return
+  rentingIds.add(id)
   try {
     await rent(id)
     toastStore.add('Hardware rented successfully!', 'success')
     await fetchHardware()
   } catch (error: any) {
     toastStore.add(error.response?.data?.detail || 'Failed to rent hardware', 'error')
+  } finally {
+    rentingIds.delete(id)
   }
 }
 
@@ -134,11 +140,11 @@ function goToAudit() {
           <td class="col-center">
             <button
               class="rent-btn"
-              :class="{ 'rent-btn--inactive': item.status !== 'Available' }"
-              :disabled="item.status !== 'Available'"
+              :class="{ 'rent-btn--inactive': item.status !== 'Available' || rentingIds.has(item.id) }"
+              :disabled="item.status !== 'Available' || rentingIds.has(item.id)"
               @click="handleRent(item.id)"
             >
-              Rent
+              {{ rentingIds.has(item.id) ? 'Renting...' : 'Rent' }}
             </button>
           </td>
         </tr>
