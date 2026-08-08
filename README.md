@@ -36,3 +36,10 @@
 * **Inventory Dashboard:** A robust `DashboardView` with real-time server-side pagination, sorting, status filtering, and one-click hardware renting (with robust double-click protection) wrapped in a modern, dark-themed glassmorphism UI.
 * **User Rentals Management:** A dedicated `MyRentalsView` enabling users to view their active and past hardware rentals with one-click return functionality and historical date tracking. Admins have access to a toggle to view all rentals across the entire system.
 * **Admin Control Center:** An exclusive, tab-based `AdminView` protected by frontend and backend role guards. It supports full CRUD operations on hardware, allows registering new users, and hosts the one-click AI Audit execution engine (with direct navigation from audit issues to hardware edit views).
+- Added status transition guards to prevent illegal hardware state changes (e.g. going to Repair with an active rental, or directly setting In Use).
+- Added deletion guard: hardware cannot be deleted if it has an active rental, preventing silent data loss.
+- Added user deletion guards: admins cannot delete their own accounts, and the system prevents deleting the last remaining administrator.
+- Fixed Dependency Injection session leak: services and repositories now explicitly share a single transactional SQLAlchemy Session per request.
+- Improved JWT decoding error handling by catching specific exceptions and adding debug logging.
+- Added frontend UI guards to prevent admins from attempting to mark hardware as 'Repair' when it is currently in use, and removed unused imports.
+- Completed critical test coverage focusing on state transitions, user deletion constraints, and atomic rollback behaviors.

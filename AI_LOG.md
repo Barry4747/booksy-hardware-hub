@@ -463,3 +463,69 @@
 **What AI decided and why:**
 - **The Problem:** The `GET /api/rentals` endpoint natively returns ALL rentals if the requester is an admin, but the UI component `MyRentalsView.vue` was strictly designed to display only the user's rentals (hence the name).
 - **The Fix:** Updated the `getMyRentals` service function to accept an optional `userId`. In `MyRentalsView.vue`, added a reactive toggle `showOnlyMine` (defaulting to `true` to preserve the "My Rentals" feel). When an admin unchecks it, `fetchRentals` passes `undefined` for `userId`, prompting the backend to return all system rentals. A dynamic `User ID` column is also injected into the table when viewing all rentals to help admins identify who rented what.
+
+## Hardware Status Transition Guards
+**Prompt used:**
+> In backend/app/services/hardware.py update the update_hardware method. Add a guard that rejects any attempt to set status = IN_USE directly... Also add a guard for toggling to REPAIR when hardware has an active rental... Add InvalidStatusTransitionError to backend/app/exceptions/hardware.py... Add get_active_by_hardware(hardware_id) to RentalRepository... Write tests...
+
+**What AI decided and why:**
+- **Exceptions:** Created \InvalidStatusTransitionError\ mapped to \HTTP 409 Conflict\.
+- **Repository:** Added \get_active_by_hardware\ to \RentalRepository\ to fetch any active rental for a given hardware ID.
+- **Service Dependency:** Injected \RentalRepository\ into \HardwareService\ so it can check for active rentals before transitioning hardware status to \REPAIR\.
+- **Core Dependencies:** Updated \get_hardware_service\ in \core.py\ to provide the ental_repo\.
+- **Status Guards:** Added explicit validations in \HardwareService.update_hardware\. Specifically, directly setting status to \IN_USE\ via \PATCH\ is now rejected. Setting status to \REPAIR\ when an active rental exists is also rejected.
+- **Testing:** Updated \	est_hardware_service.py\ with the new dependency injection and adjusted overlapping test statuses to avoid raising exceptions where not intended. Added four explicit test cases in \	est_hardware_endpoints.py\ to cover the new constraints. All tests pass (99 tests in total).
+
+## Hardware Deletion Guard
+**Prompt used:**
+> In backend/app/services/hardware.py update delete_hardware: Check for active rental before deleting... Add HardwareStillRentedError to backend/app/exceptions/hardware.py... Write tests... Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Exceptions:** Created \HardwareStillRentedError\ mapped to HTTP 409.
+- **Service Guard:** In \HardwareService.delete_hardware\, we now fetch any active rental using the ental_repo\ (which was injected in the previous refactoring step). If an active rental exists, we block the deletion, preventing silent cascade drops of active rentals.
+- **Testing:** Added \	est_delete_in_use_hardware_forbidden\ to verify that deleting an \IN_USE\ hardware item returns a 409 and explicitly verifies that both the hardware and the associated rental remain completely untouched in the database after the rejected request.
+
+## User Deletion Guards (Admin & Self)
+**Prompt used:**
+> In backend/app/services/users.py update delete_user: If the user being deleted is an admin, count remaining admins... Add count_admins() to UserRepository... Also add a guard preventing self-deletion at the router level... Write tests... Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Service Guard (Last Admin):** Added count_admins to UserRepository. In UserService.delete_user, we now count remaining admins before deleting an admin account. If it's the very last admin, we raise UserError (409), ensuring the system never becomes unmanageable.
+- **Router Guard (Self-Deletion):** Updated delete_user in pp/api/routers/users.py to inject the current_user dependency and explicitly reject requests where id == current_user.id, preventing an admin from deleting themselves.
+- **Testing:** Added 3 tests: 	est_delete_only_admin in the service test suite (verifying the backend logic bypassing the router), and 	est_delete_admin_when_multiple_exist / 	est_delete_self_as_admin in the endpoints test suite to verify the self-deletion guard and successful deletion of other admins.
+
+## Bugfix: SQLAlchemy Session DI Leak
+**Prompt used:**
+> In backend/app/api/dependencies/core.py fix the session injection bug... Fix by constructing repositories inside the service factory using the same db session...
+
+**What AI decided and why:**
+- **The Bug:** Three separate \Depends(get_db)\ calls (one for the service and two for the repositories) created independent Session objects. Even though FastAPI typically caches identical dependency calls within the same request (via \use_cache=True\), refactoring the factories to explicitly share the single passed \db\ object completely prevents any possibility of split sessions, ensuring writes in one repository are perfectly visible to the other.
+- **The Fix:** Refactored \get_auth_service\, \get_user_service\, \get_hardware_service\, \get_rental_service\, and \get_audit_service\ in \ackend/app/api/dependencies/core.py\. Removed nested repository \Depends\ calls from the signature and instead instantiated the repositories directly inside the factory functions, passing the shared \db\ session explicitly.
+- **Testing:** The test suite was verified. All 103 tests continue to pass reliably, confirming the injection strategy works properly.
+
+## Improved JWT Error Handling
+**Prompt used:**
+> In backend/app/api/dependencies/auth.py replace the broad except Exception with specific exception types... This preserves security (all map to 401) but makes debugging possible by logging specific exception types... Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Specific Exception Catching:** Removed the generic \except Exception:\ block which is an anti-pattern that can swallow unrelated runtime errors. Replaced it with explicit handling for \ExpiredSignatureError\ and \JWTError, ValueError, TypeError\ from the \jose\ library.
+- **Diagnostics Logging:** Added \logger.debug\ for these specific failure scenarios. Since these are normal auth failures (invalid tokens from users or expired tokens), \debug\ is the appropriate level to avoid spamming production logs with warnings, while still allowing developers to enable debugging when tracking down token issues.
+
+## Frontend Cleanup & UI Guards
+**Prompt used:**
+> In frontend/src/views/AdminView.vue find the Toggle Repair button... add a disabled condition... gray out the button when disabled... Add a tooltip explaining why it is disabled... Remove the unused import of api from line 7... In MyRentalsView.vue remove the unused computed import... Update AI_LOG and README.
+
+**What AI decided and why:**
+- **UI Guard for Repair Status:** Updated the Toggle Repair button in the Admin panel to be disabled and visually grayed out (\opacity-50 cursor-not-allowed\) if the hardware item's status is \In Use\. A dynamic title attribute provides feedback to the user explaining why it cannot be toggled. This matches the backend validation rule previously implemented, preventing the user from making an API call that is guaranteed to fail with 409 Conflict.
+- **Code Cleanup:** Removed the unused \pi\ import from \AdminView.vue\ and the unused \computed\ import from \MyRentalsView.vue\, keeping the frontend codebase clean.
+
+## Test Coverage Completion
+**Prompt used:**
+> Add the following tests that were identified as missing in the audit: In backend/tests/test_hardware_endpoints.py... In backend/tests/test_users_endpoints.py... In backend/tests/test_hardware_service.py... Replace test_atomic_transaction_rollback with a behavior test... Update AI_LOG and README.
+
+**What AI decided and why:**
+- **Endpoint Tests:** Renamed and added explicit tests for deleting in-use hardware (409) and attempting to delete the last admin (409), as well as admins deleting themselves (409), ensuring the API layer strictly adheres to the status guards.
+- **Service Tests:** Added specific tests in \	est_hardware_service.py\ asserting that \update_hardware\ correctly raises \InvalidStatusTransitionError\ when attempting to set \In Use\ directly or setting to \Repair\ while rented.
+- **Behavior-Driven Rollback Test:** Replaced the mock-verification test for atomic transactions with a behavior-focused test. By mocking \commit()\ to fail and manually triggering a \
+ollback()\, we verified the actual database state remains clean (no phantom rentals and hardware stays \Available\), which is far more robust than just asserting \
+ollback()\ was called.
