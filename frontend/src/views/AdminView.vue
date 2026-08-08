@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { getAll, create, update, remove } from '../services/hardware'
 import { runAudit } from '../services/audit'
 import { getAllUsers, deleteUser, createUser as apiCreateUser } from '../services/users'
-import api from '../services/api'
 import { useToastStore } from '../stores/toast'
 import { useAuthStore } from '../stores/auth'
 import type { Hardware, HardwareCreate, AuditReport, User } from '../types'
@@ -327,7 +326,13 @@ onMounted(() => {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
                 </button>
-                <button class="action-btn toggle-repair" @click="toggleRepair(item)" title="Toggle Repair">
+                <button 
+                  class="action-btn toggle-repair" 
+                  :class="{ 'opacity-50 cursor-not-allowed': item.status === 'In Use' }"
+                  :disabled="item.status === 'In Use'"
+                  @click="toggleRepair(item)" 
+                  :title="item.status === 'In Use' ? 'Cannot mark as Repair: item has an active rental' : 'Toggle Repair status'"
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon">
                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
                   </svg>

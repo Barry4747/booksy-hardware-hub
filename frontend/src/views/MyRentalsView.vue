@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getMyRentals, returnRental } from '../services/rentals'
 import { useToastStore } from '../stores/toast'
 import { useAuthStore } from '../stores/auth'
