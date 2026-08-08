@@ -11,6 +11,9 @@ class UserRepository:
     def get_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email).first()
 
+    def count_admins(self) -> int:
+        return self.db.query(User).filter(User.is_admin == True).count()
+
     def create(self, email: str, password_hash: str, is_admin: bool = False) -> User:
         user = User(email=email, password_hash=password_hash, is_admin=is_admin)
         self.db.add(user)

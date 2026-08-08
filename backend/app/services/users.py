@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.repositories.users import UserRepository
 from app.core.security import get_password_hash
-from app.exceptions.users import UserAlreadyExistsError, UserNotFoundError
+from app.exceptions.users import UserAlreadyExistsError, UserNotFoundError, UserError
 from app.schemas.user import UserResponse, DeleteUserResponse
 from app.models.rental import RentalStatus
 from app.models.hardware import HardwareStatus
@@ -26,6 +26,14 @@ class UserService:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise UserNotFoundError()
+            
+        if user.is_admin:
+            admin_count = self.user_repo.count_admins()
+            if admin_count <= 1:
+                raise UserError(
+                    detail="Cannot delete the last administrator.",
+                    status_code=409
+                )
             
         force_closed = 0
         for rental in user.rentals:

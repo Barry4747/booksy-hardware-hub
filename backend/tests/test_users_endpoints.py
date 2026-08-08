@@ -120,3 +120,28 @@ def test_delete_user_as_regular_user(client, test_user):
     client.post("/api/auth/login", json={"email": test_user.email, "password": "password123"})
     del_resp = client.delete("/api/users/999")
     assert del_resp.status_code == 403
+
+def test_delete_admin_when_multiple_exist(client, test_admin):
+    # Log in as test_admin
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    
+    # Create a second admin
+    resp = client.post("/api/users", json={
+        "email": "admin2@example.com",
+        "password": "password",
+        "is_admin": True
+    })
+    admin2_id = resp.json()["id"]
+    
+    # Delete the second admin
+    del_resp = client.delete(f"/api/users/{admin2_id}")
+    assert del_resp.status_code == 200
+
+def test_delete_self_as_admin(client, test_admin):
+    # Log in as test_admin
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    
+    # Try to delete self
+    del_resp = client.delete(f"/api/users/{test_admin.id}")
+    assert del_resp.status_code == 409
+    assert "own account" in del_resp.json()["detail"]

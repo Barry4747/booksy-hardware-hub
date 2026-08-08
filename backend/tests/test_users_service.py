@@ -30,3 +30,15 @@ def test_create_user_already_exists(db_session, test_user):
         service.create_user(email=test_user.email, password="somepassword", is_admin=False)
         
     assert exc_info.value.status_code == 409
+
+def test_delete_only_admin(db_session, test_admin):
+    from app.exceptions.users import UserError
+    repo = UserRepository(db_session)
+    service = UserService(db=db_session, user_repo=repo)
+    
+    # test_admin is currently the only admin in the database via the fixtures.
+    with pytest.raises(UserError) as exc_info:
+        service.delete_user(test_admin.id)
+        
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail == "Cannot delete the last administrator."
