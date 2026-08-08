@@ -19,3 +19,10 @@ class InvalidStatusTransitionError(HardwareError):
             detail=detail,
             status_code=status.HTTP_409_CONFLICT
         )
+
+class HardwareStillRentedError(HardwareError):
+    def __init__(self, detail: str = "Cannot delete hardware with an active rental. Force-return it first."):
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_409_CONFLICT
+        )

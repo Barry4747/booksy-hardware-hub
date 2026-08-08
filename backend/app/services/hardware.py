@@ -2,7 +2,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 from app.repositories.hardware import HardwareRepository
 from app.schemas.hardware import HardwareCreate, HardwareUpdate, HardwareResponse
-from app.exceptions.hardware import HardwareNotFoundError, InvalidStatusTransitionError
+from app.exceptions.hardware import HardwareNotFoundError, InvalidStatusTransitionError, HardwareStillRentedError
 from app.repositories.rentals import RentalRepository
 from app.models.hardware import HardwareStatus
 
@@ -55,6 +55,12 @@ class HardwareService:
         hw = self.hw_repo.get_by_id(id)
         if not hw:
             raise HardwareNotFoundError()
+            
+        active_rental = self.rental_repo.get_active_by_hardware(id)
+        if active_rental:
+            raise HardwareStillRentedError(
+                detail="Cannot delete hardware with an active rental. Force-return it first."
+            )
         
         self.hw_repo.delete(hw)
         self.db.commit()

@@ -108,3 +108,30 @@ def test_update_hardware_status_available_when_repair_success(client, test_admin
     update_resp = client.put(f"/api/hardware/{hw_id}", json={"status": "Available"})
     assert update_resp.status_code == 200
     assert update_resp.json()["status"] == "Available"
+
+def test_delete_in_use_hardware_forbidden(client, test_admin, test_user):
+    # Admin creates hardware
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    hw_resp = client.post("/api/hardware", json={"name": "XPS", "brand": "Dell"})
+    hw_id = hw_resp.json()["id"]
+    
+    # User rents it
+    client.post("/api/auth/login", json={"email": test_user.email, "password": "password123"})
+    rent_resp = client.post("/api/rentals", json={"hardware_id": hw_id})
+    rental_id = rent_resp.json()["id"]
+    
+    # Admin tries to delete it
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    del_resp = client.delete(f"/api/hardware/{hw_id}")
+    
+    # Should fail with 409
+    assert del_resp.status_code == 409
+    assert "active rental" in del_resp.json()["detail"]
+    
+    # Hardware still exists
+    get_hw_resp = client.get(f"/api/hardware/{hw_id}")
+    assert get_hw_resp.status_code == 200
+    
+    # Rental still exists
+    get_rent_resp = client.get(f"/api/rentals/{rental_id}")
+    assert get_rent_resp.status_code == 200
