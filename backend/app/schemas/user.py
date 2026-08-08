@@ -18,3 +18,7 @@ class UserResponse(UserBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class DeleteUserResponse(BaseModel):
+    message: str
+    force_closed_rentals: int

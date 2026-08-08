@@ -3,12 +3,15 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getAll, create, update, remove } from '../services/hardware'
 import { runAudit } from '../services/audit'
+import { getAllUsers, deleteUser } from '../services/users'
 import api from '../services/api'
 import { useToastStore } from '../stores/toast'
-import type { Hardware, HardwareCreate, AuditReport } from '../types'
+import { useAuthStore } from '../stores/auth'
+import type { Hardware, HardwareCreate, AuditReport, User } from '../types'
 import StatusBadge from '../components/shared/StatusBadge.vue'
 
 const toastStore = useToastStore()
+const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -116,17 +119,55 @@ const userForm = ref({
   is_admin: false
 })
 const isSubmittingUser = ref(false)
+const usersList = ref<User[]>([])
+const loadingUsers = ref(false)
+
+async function fetchUsers() {
+  loadingUsers.value = true
+  try {
+    usersList.value = await getAllUsers()
+  } catch (error: any) {
+    toastStore.add('Failed to fetch users', 'error')
+  } finally {
+    loadingUsers.value = false
+  }
+}
 
 async function createUser() {
   isSubmittingUser.value = true
   try {
+    // We can also use createUser from users.ts here instead of api.post directly, but api.post is fine.
     await api.post('/api/users', userForm.value)
     toastStore.add('User created successfully', 'success')
     userForm.value = { email: '', password: '', is_admin: false }
+    await fetchUsers()
   } catch (error: any) {
     toastStore.add(error.response?.data?.detail || 'Failed to create user', 'error')
   } finally {
     isSubmittingUser.value = false
+  }
+}
+
+async function handleDeleteUser(id: number) {
+  if (!confirm('Are you sure you want to delete this user?')) return
+  try {
+    const result = await deleteUser(id)
+    if (result.force_closed_rentals > 0) {
+      toastStore.add(`User deleted. ${result.force_closed_rentals} active rentals were force-closed and hardware returned.`, 'warning')
+    } else {
+      toastStore.add('User deleted successfully.', 'success')
+    }
+    
+    if (id === authStore.user?.id) {
+      toastStore.add('You deleted your own account. Logging out...', 'warning')
+      authStore.user = null
+      router.push('/login')
+      return
+    }
+
+    await fetchUsers()
+  } catch (error: any) {
+    toastStore.add(error.response?.data?.detail || 'Failed to delete user', 'error')
   }
 }
 
@@ -154,6 +195,7 @@ function formatDate(dateStr: string | null) {
 
 onMounted(() => {
   fetchHardware()
+  fetchUsers()
   
   if (route.query.tab === 'audit') {
     activeTab.value = 'audit'
@@ -321,6 +363,48 @@ onMounted(() => {
             </button>
           </div>
         </form>
+      </div>
+
+      <!-- Users Table -->
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Email</th>
+              <th class="th-center">Admin</th>
+              <th class="th-center">Joined</th>
+              <th class="action-column">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loadingUsers">
+              <td colspan="5" class="empty-state">Loading users...</td>
+            </tr>
+            <tr v-else-if="usersList.length === 0">
+              <td colspan="5" class="empty-state">No users found.</td>
+            </tr>
+            <tr v-else v-for="u in usersList" :key="u.id" class="table-row">
+              <td class="text-secondary font-medium">#{{ u.id }}</td>
+              <td class="font-medium">{{ u.email }}</td>
+              <td class="col-center">
+                <span v-if="u.is_admin" class="issue-badge" style="background-color: #111827; color: white;">ADMIN</span>
+                <span v-else class="text-secondary">User</span>
+              </td>
+              <td class="text-secondary col-center">{{ formatDate(u.created_at) }}</td>
+              <td class="action-column">
+                <button class="action-btn delete" @click="handleDeleteUser(u.id)" title="Delete User">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

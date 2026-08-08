@@ -23,7 +23,7 @@ class InvalidTokenError(AuthError):
 
 class UserNotFoundError(AuthError):
     def __init__(self):
-        super().__init__(detail="User not found", status_code=status.HTTP_404_NOT_FOUND)
+        super().__init__(detail="User not found", status_code=status.HTTP_401_UNAUTHORIZED)
 
 class NotEnoughPrivilegesError(AuthError):
     def __init__(self):

@@ -11,4 +11,4 @@ class User(Base):
     is_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    rentals = relationship("Rental", back_populates="user")
+    rentals = relationship("Rental", back_populates="user", cascade="all, delete-orphan")

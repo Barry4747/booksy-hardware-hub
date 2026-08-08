@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from app.api.dependencies.auth import require_admin
 from app.api.dependencies.core import get_user_service
 from app.services.users import UserService
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, DeleteUserResponse
 
 router = APIRouter()
 
@@ -16,3 +16,16 @@ def create_user(
         password=user_in.password,
         is_admin=user_in.is_admin
     )
+
+@router.delete("/{id}", response_model=DeleteUserResponse, dependencies=[Depends(require_admin)])
+def delete_user(
+    id: int,
+    user_service: UserService = Depends(get_user_service)
+):
+    return user_service.delete_user(id)
+
+@router.get("", response_model=list[UserResponse], dependencies=[Depends(require_admin)])
+def list_users(
+    user_service: UserService = Depends(get_user_service)
+):
+    return user_service.list_users()

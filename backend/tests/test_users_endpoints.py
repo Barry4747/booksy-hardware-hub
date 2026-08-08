@@ -54,3 +54,69 @@ def test_create_user_duplicate_email(client, test_admin, test_user):
     })
     assert response.status_code == 409
     assert response.json()["detail"] == "User with this email already exists"
+
+def test_delete_user_no_rentals(client, test_admin):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    
+    # Create user to delete
+    create_resp = client.post("/api/users", json={"email": "delete_me@example.com", "password": "pass"})
+    user_id = create_resp.json()["id"]
+    
+    del_resp = client.delete(f"/api/users/{user_id}")
+    assert del_resp.status_code == 200
+    assert del_resp.json()["force_closed_rentals"] == 0
+    assert del_resp.json()["message"] == "User deleted."
+
+def test_delete_user_with_active_rentals(client, test_admin):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    
+    # Create hardware
+    hw1 = client.post("/api/hardware", json={"name": "PC1", "brand": "Dell"}).json()
+    hw2 = client.post("/api/hardware", json={"name": "PC2", "brand": "Dell"}).json()
+    
+    # Create user
+    user = client.post("/api/users", json={"email": "active_renter@example.com", "password": "pass"}).json()
+    
+    # Login as new user to rent
+    client.post("/api/auth/login", json={"email": "active_renter@example.com", "password": "pass"})
+    client.post("/api/rentals", json={"hardware_id": hw1["id"]})
+    client.post("/api/rentals", json={"hardware_id": hw2["id"]})
+    
+    # Login back as admin to delete
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    del_resp = client.delete(f"/api/users/{user['id']}")
+    
+    assert del_resp.status_code == 200
+    assert del_resp.json()["force_closed_rentals"] == 2
+    
+    # Verify hardware is available again
+    assert client.get(f"/api/hardware/{hw1['id']}").json()["status"] == "Available"
+    assert client.get(f"/api/hardware/{hw2['id']}").json()["status"] == "Available"
+
+def test_delete_user_with_returned_rentals(client, test_admin):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    
+    hw1 = client.post("/api/hardware", json={"name": "PC3", "brand": "Dell"}).json()
+    user = client.post("/api/users", json={"email": "past_renter@example.com", "password": "pass"}).json()
+    
+    client.post("/api/auth/login", json={"email": "past_renter@example.com", "password": "pass"})
+    rent_resp = client.post("/api/rentals", json={"hardware_id": hw1["id"]}).json()
+    
+    # Return it
+    client.post(f"/api/rentals/{rent_resp['id']}/return")
+    
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    del_resp = client.delete(f"/api/users/{user['id']}")
+    
+    assert del_resp.status_code == 200
+    assert del_resp.json()["force_closed_rentals"] == 0
+
+def test_delete_non_existent_user(client, test_admin):
+    client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
+    del_resp = client.delete("/api/users/999")
+    assert del_resp.status_code == 404
+
+def test_delete_user_as_regular_user(client, test_user):
+    client.post("/api/auth/login", json={"email": test_user.email, "password": "password123"})
+    del_resp = client.delete("/api/users/999")
+    assert del_resp.status_code == 403

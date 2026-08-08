@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from app.repositories.users import UserRepository
 from app.core.security import get_password_hash
-from app.exceptions.users import UserAlreadyExistsError
-from app.schemas.user import UserResponse
+from app.exceptions.users import UserAlreadyExistsError, UserNotFoundError
+from app.schemas.user import UserResponse, DeleteUserResponse
+from app.models.rental import RentalStatus
+from app.models.hardware import HardwareStatus
+from datetime import datetime, timezone
 
 class UserService:
     def __init__(self, db: Session, user_repo: UserRepository):
@@ -18,3 +21,35 @@ class UserService:
         
         self.db.commit()
         return UserResponse.model_validate(user)
+
+    def delete_user(self, user_id: int) -> DeleteUserResponse:
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError()
+            
+        force_closed = 0
+        for rental in user.rentals:
+            if rental.returned_at is None:
+                rental.returned_at = datetime.now(timezone.utc)
+                rental.status = RentalStatus.RETURNED
+                if rental.hardware:
+                    rental.hardware.status = HardwareStatus.AVAILABLE
+                force_closed += 1
+                
+        self.user_repo.delete(user)
+        self.db.commit()
+        
+        if force_closed > 0:
+            return DeleteUserResponse(
+                message="User deleted. Active rentals were force-closed and hardware returned to available.",
+                force_closed_rentals=force_closed
+            )
+        else:
+            return DeleteUserResponse(
+                message="User deleted.",
+                force_closed_rentals=0
+            )
+
+    def list_users(self) -> list[UserResponse]:
+        users = self.user_repo.list()
+        return [UserResponse.model_validate(u) for u in users]
