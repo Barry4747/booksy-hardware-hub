@@ -1,12 +1,12 @@
 from typing import Any
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from app.repositories.rentals import RentalRepository
 from app.repositories.hardware import HardwareRepository
-from app.schemas.rental import RentalResponse, RentalUpdate
+from app.schemas.rental import RentalResponse
 from app.models.hardware import HardwareStatus
 from app.models.rental import RentalStatus
-from app.exceptions.rentals import RentalNotFoundError, HardwareUnavailableError
+from app.exceptions.rentals import RentalNotFoundError, HardwareUnavailableError, RentalAlreadyReturnedException, RentalNotOwnedException
 from app.exceptions.hardware import HardwareNotFoundError
 
 class RentalService:
@@ -43,33 +43,27 @@ class RentalService:
             self.db.rollback()
             raise e
 
-    def update_rental(self, id: int, updates: RentalUpdate) -> RentalResponse:
+    def return_rental(self, id: int, user_id: int, is_admin: bool = False) -> RentalResponse:
         rental = self.rental_repo.get_by_id(id)
         if not rental:
             raise RentalNotFoundError()
             
-        update_data = updates.model_dump(exclude_unset=True)
-        if not update_data:
-            return RentalResponse.model_validate(rental)
+        if not is_admin and rental.user_id != user_id:
+            raise RentalNotOwnedException()
             
-        # Determine if we need to return the device based on returned_at or status changes
-        is_returning = False
+        if rental.status == RentalStatus.RETURNED or rental.returned_at is not None:
+            raise RentalAlreadyReturnedException()
+            
+        hw = self.hw_repo.get_by_id(rental.hardware_id)
+        if not hw:
+            raise HardwareNotFoundError()
+            
+        self.hw_repo.update(hw, {"status": HardwareStatus.AVAILABLE})
+        rental = self.rental_repo.update(rental, {
+            "status": RentalStatus.RETURNED,
+            "returned_at": datetime.now(timezone.utc)
+        })
         
-        if "returned_at" in update_data and update_data["returned_at"] is not None and rental.returned_at is None:
-            is_returning = True
-            update_data["status"] = RentalStatus.RETURNED
-            
-        if "status" in update_data and update_data["status"] == RentalStatus.RETURNED and rental.status != RentalStatus.RETURNED:
-            is_returning = True
-            if "returned_at" not in update_data or update_data["returned_at"] is None:
-                update_data["returned_at"] = datetime.now()
-                
-        if is_returning:
-            hw = self.hw_repo.get_by_id(rental.hardware_id)
-            if hw:
-                self.hw_repo.update(hw, {"status": HardwareStatus.AVAILABLE})
-                    
-        rental = self.rental_repo.update(rental, update_data)
         try:
             self.db.commit()
             return RentalResponse.model_validate(rental)

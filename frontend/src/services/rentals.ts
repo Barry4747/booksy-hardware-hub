@@ -7,7 +7,7 @@ export async function rent(hardwareId: number) {
 }
 
 export async function returnRental(rentalId: number) {
-  const { data } = await api.patch<Rental>(`/api/rentals/${rentalId}`, { returned_at: new Date().toISOString() })
+  const { data } = await api.post<Rental>(`/api/rentals/${rentalId}/return`)
   return data
 }
 
