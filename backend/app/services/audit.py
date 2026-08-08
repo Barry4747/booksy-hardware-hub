@@ -6,13 +6,15 @@ from app.schemas.audit import AuditReport, AuditIssue, SeverityEnum
 from app.core.config import settings
 from app.exceptions.audit import AuditGenerationError
 
+from fastapi.concurrency import run_in_threadpool
+
 class AuditService:
     def __init__(self, db: Session, hw_repo: HardwareRepository):
         self.db = db
         self.hw_repo = hw_repo
         self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-    def run_audit(self) -> AuditReport:
+    async def run_audit(self) -> AuditReport:
         hardware_list = self.hw_repo.list(limit=1000)
         
         hw_dicts = []
@@ -57,11 +59,14 @@ Flag these issues:
 Inventory:
 {inventory_json}"""
 
-        try:
-            response = self.client.models.generate_content(
+        def call_gemini():
+            return self.client.models.generate_content(
                 model=settings.GEMINI_MODEL,
                 contents=prompt
             )
+
+        try:
+            response = await run_in_threadpool(call_gemini)
             
             raw_text = response.text.strip()
             if raw_text.startswith("```json"):

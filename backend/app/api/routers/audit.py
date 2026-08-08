@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.post("", response_model=AuditReport, status_code=status.HTTP_200_OK)
 @limiter.limit(f"{settings.AUDIT_RATE_LIMIT}/minute")
-def run_audit(
+async def run_audit(
     request: Request,
     current_user: User = Depends(get_current_user),
     audit_service: AuditService = Depends(get_audit_service)
@@ -20,4 +20,4 @@ def run_audit(
     if not current_user.is_admin:
         raise NotEnoughPrivilegesError()
         
-    return audit_service.run_audit()
+    return await audit_service.run_audit()
