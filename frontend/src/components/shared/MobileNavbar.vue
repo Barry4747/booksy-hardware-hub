@@ -48,13 +48,19 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const isOpen = ref(false)
+
+const route = useRoute()
+import { watch } from 'vue'
+watch(route, () => {
+  isOpen.value = false
+})
 
 function toggleMenu() {
   isOpen.value = !isOpen.value

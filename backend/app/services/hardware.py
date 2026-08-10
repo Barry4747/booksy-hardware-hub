@@ -18,8 +18,8 @@ class HardwareService:
             raise HardwareNotFoundError()
         return HardwareResponse.model_validate(hw)
 
-    def list_hardware(self, skip: int = 0, limit: int = 100, filters: dict[str, Any] | None = None, sort_by: str | None = None, sort_desc: bool = False) -> list[HardwareResponse]:
-        hws = self.hw_repo.list(skip=skip, limit=limit, filters=filters, sort_by=sort_by, sort_desc=sort_desc)
+    def list_hardware(self, skip: int = 0, limit: int = 100, filters: dict[str, Any] | None = None, search: str | None = None, sort_by: str | None = None, sort_desc: bool = False) -> list[HardwareResponse]:
+        hws = self.hw_repo.list(skip=skip, limit=limit, filters=filters, search=search, sort_by=sort_by, sort_desc=sort_desc)
         return [HardwareResponse.model_validate(hw) for hw in hws]
 
     def create_hardware(self, hardware_in: HardwareCreate) -> HardwareResponse:

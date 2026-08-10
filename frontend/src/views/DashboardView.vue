@@ -21,6 +21,7 @@ const totalCount = ref<string | number>(0)
 const hasNext = ref(false)
 
 const statusFilter = ref<string>('')
+const searchQuery = ref<string>('')
 const sortBy = ref<string>('created_at')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
@@ -33,6 +34,7 @@ async function fetchHardware() {
         page: page.value,
         limit: limit.value,
         status: statusFilter.value || undefined,
+        search: searchQuery.value || undefined,
         sort_by: sortBy.value,
         sort_order: sortOrder.value
       })
@@ -50,8 +52,12 @@ onMounted(() => {
   fetchHardware()
 })
 
-watch([page, statusFilter, sortBy, sortOrder], () => {
+watch([page, statusFilter, searchQuery, sortBy, sortOrder], () => {
   fetchHardware()
+})
+
+watch([statusFilter, searchQuery, sortBy, sortOrder], () => {
+  page.value = 1
 })
 
 function toggleSort(field: string) {
@@ -105,6 +111,24 @@ function goToAudit() {
         </svg>
         AI Audit
       </button>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="filter-bar">
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" v-model="searchQuery" placeholder="Search by name or serial number..." class="search-input" />
+      </div>
+      <div class="filter-wrapper">
+        <label class="filter-label">Status:</label>
+        <select v-model="statusFilter" class="custom-select">
+          <option value="">All Statuses</option>
+          <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
     </div>
 
     <!-- Data Table -->
@@ -162,14 +186,7 @@ function goToAudit() {
       </div>
     </div>
 
-    <!-- Status Filter (minimal, below table) -->
-    <div class="filters-row">
-      <label class="filter-label">Filter:</label>
-      <select id="status-filter" v-model="statusFilter" class="custom-select">
-        <option value="">All Statuses</option>
-        <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
-      </select>
-    </div>
+
 
   </div>
 </template>
@@ -179,6 +196,57 @@ function goToAudit() {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .header-row {
@@ -199,7 +267,7 @@ function goToAudit() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #8b5cf6;
+  background-color: #111827;
   color: #ffffff;
   border: none;
   padding: 0.5rem 1rem;
@@ -211,7 +279,7 @@ function goToAudit() {
 }
 
 .audit-action-btn:hover {
-  background-color: #7c3aed;
+  background-color: #374151;
 }
 
 .sparkle-icon {

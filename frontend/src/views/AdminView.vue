@@ -145,7 +145,12 @@ async function createUser() {
     userForm.value = { email: '', password: '', is_admin: false }
     await fetchUsers()
   } catch (error: any) {
-    toastStore.add(error.response?.data?.detail || 'Failed to create user', 'error')
+    let errMessage = 'Failed to create user'
+    const detail = error.response?.data?.detail
+    if (detail) {
+      errMessage = Array.isArray(detail) ? detail[0].msg : detail
+    }
+    toastStore.add(errMessage, 'error')
   } finally {
     isSubmittingUser.value = false
   }
@@ -202,6 +207,83 @@ function goToHardwareEdit(hardwareId: number) {
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString()
+}
+
+import { computed } from 'vue'
+
+const hwSearchQuery = ref('')
+const hwStatusFilter = ref('')
+const hwSortBy = ref('id')
+const hwSortOrder = ref<'asc'|'desc'>('asc')
+
+const filteredHardwareItems = computed(() => {
+  let items = [...hardwareItems.value]
+  if (hwStatusFilter.value) {
+    items = items.filter(i => i.status === hwStatusFilter.value)
+  }
+  if (hwSearchQuery.value) {
+    const q = hwSearchQuery.value.toLowerCase()
+    items = items.filter(i => 
+      i.name.toLowerCase().includes(q) || 
+      (i.serial_number && i.serial_number.toLowerCase().includes(q)) ||
+      (i.brand && i.brand.toLowerCase().includes(q))
+    )
+  }
+  items.sort((a, b) => {
+    let aVal = a[hwSortBy.value as keyof Hardware]
+    let bVal = b[hwSortBy.value as keyof Hardware]
+    if (aVal == null) aVal = ''
+    if (bVal == null) bVal = ''
+    if (aVal < bVal) return hwSortOrder.value === 'asc' ? -1 : 1
+    if (aVal > bVal) return hwSortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+  return items
+})
+
+function toggleHwSort(field: string) {
+  if (hwSortBy.value === field) {
+    hwSortOrder.value = hwSortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    hwSortBy.value = field
+    hwSortOrder.value = 'asc'
+  }
+}
+
+const userSearchQuery = ref('')
+const userRoleFilter = ref('')
+const userSortBy = ref('id')
+const userSortOrder = ref<'asc'|'desc'>('asc')
+
+const filteredUsers = computed(() => {
+  let items = [...usersList.value]
+  if (userRoleFilter.value === 'admin') items = items.filter(u => u.is_admin)
+  else if (userRoleFilter.value === 'user') items = items.filter(u => !u.is_admin)
+  
+  if (userSearchQuery.value) {
+    const q = userSearchQuery.value.toLowerCase()
+    items = items.filter(u => u.email.toLowerCase().includes(q))
+  }
+  
+  items.sort((a, b) => {
+    let aVal = a[userSortBy.value as keyof User]
+    let bVal = b[userSortBy.value as keyof User]
+    if (aVal == null) aVal = ''
+    if (bVal == null) bVal = ''
+    if (aVal < bVal) return userSortOrder.value === 'asc' ? -1 : 1
+    if (aVal > bVal) return userSortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+  return items
+})
+
+function toggleUserSort(field: string) {
+  if (userSortBy.value === field) {
+    userSortOrder.value = userSortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    userSortBy.value = field
+    userSortOrder.value = 'asc'
+  }
 }
 
 onMounted(() => {
@@ -290,6 +372,11 @@ onMounted(() => {
             </div>
 
             <div class="form-group">
+              <label>Purchase Date</label>
+              <input type="date" v-model="hwForm.purchase_date" />
+            </div>
+
+            <div class="form-group">
               <label>Notes</label>
               <input type="text" v-model="hwForm.notes" placeholder="Optional details..." />
             </div>
@@ -313,16 +400,46 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Filters Bar -->
+      <div class="filter-bar">
+        <div class="search-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" v-model="hwSearchQuery" placeholder="Search by name, brand or serial..." class="search-input" />
+        </div>
+        <div class="filter-wrapper">
+          <label class="filter-label">Status:</label>
+          <select v-model="hwStatusFilter" class="custom-select">
+            <option value="">All Statuses</option>
+            <option value="Available">Available</option>
+            <option value="In Use">In Use</option>
+            <option value="Repair">Repair</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Hardware Table -->
       <div class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width: 25%">Device Name</th>
-              <th class="th-center" style="width: 20%">Brand</th>
-              <th class="th-center" style="width: 15%">Serial Number</th>
-              <th class="th-center" style="width: 15%">Date Added</th>
-              <th class="th-center" style="width: 10%">Status</th>
+              <th @click="toggleHwSort('name')" class="sortable" style="width: 25%">
+                Device Name<span v-if="hwSortBy === 'name'" class="sort-icon">{{ hwSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
+              <th @click="toggleHwSort('brand')" class="sortable th-center" style="width: 20%">
+                Brand<span v-if="hwSortBy === 'brand'" class="sort-icon">{{ hwSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
+              <th @click="toggleHwSort('serial_number')" class="sortable th-center" style="width: 15%">
+                Serial Number<span v-if="hwSortBy === 'serial_number'" class="sort-icon">{{ hwSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
+              <th @click="toggleHwSort('purchase_date')" class="sortable th-center" style="width: 15%">
+                Date Added<span v-if="hwSortBy === 'purchase_date'" class="sort-icon">{{ hwSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
+              <th @click="toggleHwSort('status')" class="sortable th-center" style="width: 10%">
+                Status<span v-if="hwSortBy === 'status'" class="sort-icon">{{ hwSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
               <th class="action-column" style="width: 15%">Actions</th>
             </tr>
           </thead>
@@ -330,10 +447,10 @@ onMounted(() => {
             <tr v-if="loadingHardware">
               <td colspan="6" class="empty-state">Loading hardware...</td>
             </tr>
-            <tr v-else-if="hardwareItems.length === 0">
+            <tr v-else-if="filteredHardwareItems.length === 0">
               <td colspan="6" class="empty-state">No hardware found.</td>
             </tr>
-            <tr v-else v-for="item in hardwareItems" :key="item.id" class="table-row">
+            <tr v-else v-for="item in filteredHardwareItems" :key="item.id" class="table-row">
               <td class="font-medium">{{ item.name }}</td>
               <td class="text-secondary col-center">{{ item.brand }}</td>
               <td class="text-secondary col-center">{{ item.serial_number || '-' }}</td>
@@ -389,9 +506,10 @@ onMounted(() => {
               <label>Email Address</label>
               <input type="email" v-model="userForm.email" required placeholder="user@example.com" />
             </div>
-            <div class="form-group">
+            <div class="form-group" :class="{ 'has-error': userForm.password.length > 0 && userForm.password.length < 8 }">
               <label>Password</label>
               <input type="password" v-model="userForm.password" required placeholder="Min. 8 characters" minlength="8" />
+              <span class="error-text" v-if="userForm.password.length > 0 && userForm.password.length < 8">Password must be at least 8 characters</span>
             </div>
             <div class="form-checkbox">
               <input type="checkbox" id="is_admin" v-model="userForm.is_admin" />
@@ -399,11 +517,29 @@ onMounted(() => {
             </div>
             <div class="modal-actions">
               <button type="button" class="btn-cancel" @click="cancelUserForm">Cancel</button>
-              <button type="submit" class="btn-submit" :disabled="isSubmittingUser">
+              <button type="submit" class="btn-submit" :disabled="isSubmittingUser || (userForm.password.length > 0 && userForm.password.length < 8)">
                 {{ isSubmittingUser ? 'Adding...' : 'Add User' }}
               </button>
             </div>
           </form>
+        </div>
+      </div>
+      <!-- Filters Bar -->
+      <div class="filter-bar">
+        <div class="search-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" v-model="userSearchQuery" placeholder="Search by email..." class="search-input" />
+        </div>
+        <div class="filter-wrapper">
+          <label class="filter-label">Role:</label>
+          <select v-model="userRoleFilter" class="custom-select">
+            <option value="">All Roles</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
       </div>
 
@@ -412,10 +548,18 @@ onMounted(() => {
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width: 10%">ID</th>
-              <th style="width: 40%">Email</th>
-              <th class="th-center" style="width: 15%">Admin</th>
-              <th class="th-center" style="width: 20%">Joined</th>
+              <th @click="toggleUserSort('id')" class="sortable" style="width: 10%">
+                ID<span v-if="userSortBy === 'id'" class="sort-icon">{{ userSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
+              <th @click="toggleUserSort('email')" class="sortable" style="width: 40%">
+                Email<span v-if="userSortBy === 'email'" class="sort-icon">{{ userSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
+              <th @click="toggleUserSort('is_admin')" class="sortable th-center" style="width: 15%">
+                Admin<span v-if="userSortBy === 'is_admin'" class="sort-icon">{{ userSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
+              <th @click="toggleUserSort('created_at')" class="sortable th-center" style="width: 20%">
+                Joined<span v-if="userSortBy === 'created_at'" class="sort-icon">{{ userSortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+              </th>
               <th class="action-column" style="width: 15%">Actions</th>
             </tr>
           </thead>
@@ -423,10 +567,10 @@ onMounted(() => {
             <tr v-if="loadingUsers">
               <td colspan="5" class="empty-state">Loading users...</td>
             </tr>
-            <tr v-else-if="usersList.length === 0">
+            <tr v-else-if="filteredUsers.length === 0">
               <td colspan="5" class="empty-state">No users found.</td>
             </tr>
-            <tr v-else v-for="u in usersList" :key="u.id" class="table-row">
+            <tr v-else v-for="u in filteredUsers" :key="u.id" class="table-row">
               <td class="text-secondary font-medium">#{{ u.id }}</td>
               <td class="font-medium">{{ u.email }}</td>
               <td class="col-center">
@@ -694,6 +838,20 @@ onMounted(() => {
   background-color: #ffffff;
 }
 
+.modern-form .has-error input {
+  border-color: #ef4444;
+}
+
+.modern-form .has-error input:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
 .select-wrapper {
   position: relative;
 }
@@ -948,6 +1106,84 @@ onMounted(() => {
   color: #111827;
 }
 
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.custom-select {
+  padding: 0.4rem 1.5rem 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #111827;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+}
+
+.custom-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -960,6 +1196,8 @@ onMounted(() => {
     justify-content: center;
     min-height: 44px;
   }
+
+
 
   .tabs {
     overflow-x: auto;
@@ -1011,6 +1249,20 @@ onMounted(() => {
 
   .issue-header {
     flex-wrap: wrap;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-wrapper, .filter-wrapper {
+    width: 100%;
+  }
+  .filter-wrapper {
+    justify-content: space-between;
+  }
+  .filter-wrapper select {
+    flex: 1;
   }
 }
 </style>

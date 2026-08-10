@@ -1,7 +1,7 @@
 import api from './api'
 import type { Hardware, HardwareCreate, HardwareUpdate, PaginatedResponse } from '../types'
 
-export async function getAll(params: { page?: number, limit?: number, status?: string, sort_by?: string, sort_order?: string } = {}) {
+export async function getAll(params: { page?: number, limit?: number, status?: string, search?: string, sort_by?: string, sort_order?: string } = {}) {
   const page = params.page || 1
   const limit = params.limit || 10
   const skip = (page - 1) * limit
@@ -9,6 +9,7 @@ export async function getAll(params: { page?: number, limit?: number, status?: s
     skip,
     limit: limit + 1,
     status: params.status,
+    search: params.search,
     sort_by: params.sort_by,
     sort_desc: params.sort_order === 'desc'
   }
