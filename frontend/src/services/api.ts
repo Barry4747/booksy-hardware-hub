@@ -3,31 +3,58 @@ import router from '../router'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
+  // withCredentials required for HttpOnly cookies on cross-origin requests
   withCredentials: true
 })
+
+let isRefreshing = false
+let refreshSubscribers: ((success: boolean) => void)[] = []
+
+function subscribeToRefresh(callback: (success: boolean) => void) {
+  refreshSubscribers.push(callback)
+}
+
+function notifySubscribers(success: boolean) {
+  refreshSubscribers.forEach(cb => cb(success))
+  refreshSubscribers = []
+}
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
 
-    // If the error is 401 Unauthorized and we haven't already retried this request
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
+      // Concurrency lock — only one refresh fires regardless of concurrent 401s
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          subscribeToRefresh((success) => {
+            if (success) {
+              resolve(api(originalRequest))
+            } else {
+              reject(error)
+            }
+          })
+        })
+      }
+
+      isRefreshing = true
       try {
-        // Attempt to refresh the token
-        // Use a new axios instance or generic axios to avoid interceptor loops
         await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
           {},
           { withCredentials: true }
         )
         
-        // If refresh succeeds, retry the original request
+        isRefreshing = false
+        notifySubscribers(true)
         return api(originalRequest)
       } catch (refreshError) {
-        // If refresh fails, clear local user state and redirect to login
+        isRefreshing = false
+        notifySubscribers(false)
+        
         const { useAuthStore } = await import('../stores/auth')
         const authStore = useAuthStore()
         authStore.user = null

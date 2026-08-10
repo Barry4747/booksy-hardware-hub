@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Query
 from app.api.dependencies.auth import get_current_user
 from app.api.dependencies.core import get_rental_service
 from app.services.rentals import RentalService
-from app.schemas.rental import RentalCreate, RentalResponse, RentalUpdate
+from app.schemas.rental import RentalCreate, RentalResponse
 from app.models.user import User
 from app.exceptions.auth import NotEnoughPrivilegesError
 
@@ -50,14 +50,10 @@ def create_rental(
         user_id=current_user.id
     )
 
-@router.patch("/{id}", response_model=RentalResponse)
-def update_rental(
+@router.post("/{id}/return", response_model=RentalResponse)
+def return_rental(
     id: int,
-    rental_in: RentalUpdate,
     current_user: User = Depends(get_current_user),
     rental_service: RentalService = Depends(get_rental_service)
 ):
-    rental = rental_service.get_rental(id)
-    if not current_user.is_admin and rental.user_id != current_user.id:
-        raise NotEnoughPrivilegesError()
-    return rental_service.update_rental(id, rental_in)
+    return rental_service.return_rental(id, current_user.id, current_user.is_admin)

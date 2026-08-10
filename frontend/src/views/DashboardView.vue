@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getAll } from '../services/hardware'
@@ -15,14 +15,13 @@ const authStore = useAuthStore()
 const items = ref<Hardware[]>([])
 const loading = ref(false)
 
-// Pagination
 const page = ref(1)
 const limit = ref(10)
-const totalCount = ref(0)
+const totalCount = ref<string | number>(0)
 const hasNext = ref(false)
 
-// Filters & Sorting
 const statusFilter = ref<string>('')
+const searchQuery = ref<string>('')
 const sortBy = ref<string>('created_at')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
@@ -31,16 +30,17 @@ const statuses = ['Available', 'In Use', 'Repair']
 async function fetchHardware() {
   loading.value = true
   try {
-    const data = await getAll({
-      page: page.value,
-      limit: limit.value,
-      status: statusFilter.value || undefined,
-      sort_by: sortBy.value,
-      sort_order: sortOrder.value
-    })
-    items.value = data
-    totalCount.value = data.length
-    hasNext.value = data.length === limit.value
+      const response = await getAll({
+        page: page.value,
+        limit: limit.value,
+        status: statusFilter.value || undefined,
+        search: searchQuery.value || undefined,
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value
+      })
+      items.value = response.items || (Array.isArray(response) ? response : [])
+      hasNext.value = response.hasNext || false
+      totalCount.value = page.value === 1 && !response.hasNext ? (response.items || items.value).length : (page.value - 1) * limit.value + (response.items || items.value).length + (response.hasNext ? '+' : '')
   } catch (error: any) {
     toastStore.add('Failed to load hardware inventory', 'error')
   } finally {
@@ -52,8 +52,12 @@ onMounted(() => {
   fetchHardware()
 })
 
-watch([page, statusFilter, sortBy, sortOrder], () => {
+watch([page, statusFilter, searchQuery, sortBy, sortOrder], () => {
   fetchHardware()
+})
+
+watch([statusFilter, searchQuery, sortBy, sortOrder], () => {
+  page.value = 1
 })
 
 function toggleSort(field: string) {
@@ -65,13 +69,20 @@ function toggleSort(field: string) {
   }
 }
 
+// rentingIds tracks in-flight requests to prevent double-click race conditions
+const rentingIds = reactive(new Set<number>())
+
 async function handleRent(id: number) {
+  if (rentingIds.has(id)) return
+  rentingIds.add(id)
   try {
     await rent(id)
     toastStore.add('Hardware rented successfully!', 'success')
     await fetchHardware()
   } catch (error: any) {
     toastStore.add(error.response?.data?.detail || 'Failed to rent hardware', 'error')
+  } finally {
+    rentingIds.delete(id)
   }
 }
 
@@ -102,48 +113,68 @@ function goToAudit() {
       </button>
     </div>
 
+    <!-- Filters Bar -->
+    <div class="filter-bar">
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" v-model="searchQuery" placeholder="Search by name or serial number..." class="search-input" />
+      </div>
+      <div class="filter-wrapper">
+        <label class="filter-label">Status:</label>
+        <select v-model="statusFilter" class="custom-select">
+          <option value="">All Statuses</option>
+          <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Data Table -->
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th @click="toggleSort('name')" class="sortable">
-            Device Name<span v-if="sortBy === 'name'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
-          </th>
-          <th @click="toggleSort('brand')" class="sortable th-center">
-            Brand<span v-if="sortBy === 'brand'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
-          </th>
-          <th @click="toggleSort('created_at')" class="sortable th-center">
-            Date Added<span v-if="sortBy === 'created_at'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
-          </th>
-          <th class="th-center">Status</th>
-          <th class="th-center">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-if="loading">
-          <td colspan="5" class="empty-state">Loading inventory...</td>
-        </tr>
-        <tr v-else-if="items.length === 0">
-          <td colspan="5" class="empty-state">No hardware found.</td>
-        </tr>
-        <tr v-else v-for="item in items" :key="item.id" class="table-row">
-          <td class="col-name">{{ item.name }}</td>
-          <td class="col-accent col-center">{{ item.brand }}</td>
-          <td class="col-accent col-center">{{ formatDate(item.created_at) }}</td>
-          <td class="col-center"><StatusBadge :status="item.status" /></td>
-          <td class="col-center">
-            <button
-              class="rent-btn"
-              :class="{ 'rent-btn--inactive': item.status !== 'Available' }"
-              :disabled="item.status !== 'Available'"
-              @click="handleRent(item.id)"
-            >
-              Rent
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th @click="toggleSort('name')" class="sortable" style="width: 30%">
+              Device Name<span v-if="sortBy === 'name'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            </th>
+            <th @click="toggleSort('brand')" class="sortable th-center" style="width: 20%">
+              Brand<span v-if="sortBy === 'brand'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            </th>
+            <th @click="toggleSort('created_at')" class="sortable th-center" style="width: 20%">
+              Date Added<span v-if="sortBy === 'created_at'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            </th>
+            <th class="th-center" style="width: 15%">Status</th>
+            <th class="th-center" style="width: 15%">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading">
+            <td colspan="5" class="empty-state">Loading inventory...</td>
+          </tr>
+          <tr v-else-if="items.length === 0">
+            <td colspan="5" class="empty-state">No hardware found.</td>
+          </tr>
+          <tr v-else v-for="item in items" :key="item.id" class="table-row">
+            <td class="col-name">{{ item.name }}</td>
+            <td class="col-accent col-center">{{ item.brand }}</td>
+            <td class="col-accent col-center">{{ formatDate(item.created_at) }}</td>
+            <td class="col-center"><StatusBadge :status="item.status" /></td>
+            <td class="col-center">
+              <button
+                class="rent-btn"
+                :class="{ 'rent-btn--inactive': item.status !== 'Available' || rentingIds.has(item.id) }"
+                :disabled="item.status !== 'Available' || rentingIds.has(item.id)"
+                @click="handleRent(item.id)"
+              >
+                {{ rentingIds.has(item.id) ? 'Renting...' : 'Rent' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- Pagination -->
     <div class="pagination-footer">
@@ -155,14 +186,7 @@ function goToAudit() {
       </div>
     </div>
 
-    <!-- Status Filter (minimal, below table) -->
-    <div class="filters-row">
-      <label class="filter-label">Filter:</label>
-      <select id="status-filter" v-model="statusFilter" class="custom-select">
-        <option value="">All Statuses</option>
-        <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
-      </select>
-    </div>
+
 
   </div>
 </template>
@@ -172,6 +196,57 @@ function goToAudit() {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .header-row {
@@ -192,7 +267,7 @@ function goToAudit() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #8b5cf6;
+  background-color: #111827;
   color: #ffffff;
   border: none;
   padding: 0.5rem 1rem;
@@ -204,7 +279,7 @@ function goToAudit() {
 }
 
 .audit-action-btn:hover {
-  background-color: #7c3aed;
+  background-color: #374151;
 }
 
 .sparkle-icon {
@@ -221,6 +296,7 @@ function goToAudit() {
   border-radius: 12px;
   overflow: hidden;
   text-align: left;
+  table-layout: fixed;
 }
 .data-table th {
   padding: 1rem 1.5rem;
@@ -229,6 +305,8 @@ function goToAudit() {
   color: #111827;
   border-bottom: 1px solid #f3f4f6;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .sortable { cursor: pointer; user-select: none; }
 .sortable:hover { color: #374151; }
@@ -238,6 +316,9 @@ function goToAudit() {
   padding: 1rem 1.5rem;
   font-size: 0.85rem;
   border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .table-row:last-child td { border-bottom: none; }
 .table-row:hover td { background-color: #fafafa; }
@@ -310,5 +391,65 @@ function goToAudit() {
   outline: none;
   font-family: inherit;
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .audit-action-btn {
+    min-height: 44px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  table {
+    min-width: 560px;
+  }
+
+  .data-table th, .data-table td {
+    white-space: nowrap;
+  }
+
+  .rent-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .pagination-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .pagination-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .page-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-select {
+    width: 100%;
+    min-height: 44px;
+  }
 }
 </style>

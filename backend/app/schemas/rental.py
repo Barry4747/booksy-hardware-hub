@@ -13,10 +13,6 @@ class RentalBase(BaseModel):
 class RentalCreate(BaseModel):
     hardware_id: int
 
-class RentalUpdate(BaseModel):
-    returned_at: Optional[datetime] = None
-    status: Optional[RentalStatus] = None
-
 class RentalResponse(RentalBase):
     id: int
     rented_at: datetime

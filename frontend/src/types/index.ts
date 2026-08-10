@@ -5,6 +5,12 @@ export interface User {
   created_at: string
 }
 
+export interface UserCreate {
+  email: string
+  password: string
+  is_admin?: boolean
+}
+
 export interface Hardware {
   id: number
   name: string
@@ -12,6 +18,7 @@ export interface Hardware {
   purchase_date: string | null
   status: 'Available' | 'In Use' | 'Repair'
   notes: string | null
+  serial_number: string | null
   created_at: string
 }
 

@@ -3,9 +3,8 @@ from app.services.rentals import RentalService
 from app.repositories.rentals import RentalRepository
 from app.repositories.hardware import HardwareRepository
 from app.models.hardware import HardwareStatus
-from app.exceptions.rentals import RentalNotFoundError, HardwareUnavailableError
+from app.exceptions.rentals import RentalNotFoundError, HardwareUnavailableError, RentalAlreadyReturnedException, RentalNotOwnedException
 from app.exceptions.hardware import HardwareNotFoundError
-from app.schemas.rental import RentalUpdate
 from app.models.rental import RentalStatus
 from datetime import datetime
 
@@ -52,7 +51,7 @@ def test_return_rental_success(db_session, test_user):
     db_session.commit()
     
     rental = service.create_rental(hardware_id=hw.id, user_id=test_user.id)
-    returned = service.update_rental(rental.id, RentalUpdate(status=RentalStatus.RETURNED))
+    returned = service.return_rental(rental.id, test_user.id)
     
     assert returned.returned_at is not None
     assert returned.status == RentalStatus.RETURNED
@@ -69,20 +68,33 @@ def test_return_rental_already_returned(db_session, test_user):
     db_session.commit()
     
     rental = service.create_rental(hardware_id=hw.id, user_id=test_user.id)
-    service.update_rental(rental.id, RentalUpdate(status=RentalStatus.RETURNED))
+    service.return_rental(rental.id, test_user.id)
     
-    # second time shouldn't crash, returns early
-    returned = service.update_rental(rental.id, RentalUpdate(status=RentalStatus.RETURNED))
-    assert returned.returned_at is not None
-    assert returned.status == RentalStatus.RETURNED
+    # second time should raise
+    with pytest.raises(RentalAlreadyReturnedException):
+        service.return_rental(rental.id, test_user.id)
 
-def test_return_rental_not_found(db_session):
+def test_return_rental_not_owned(db_session, test_user, test_admin):
+    hw_repo = HardwareRepository(db_session)
+    rental_repo = RentalRepository(db_session)
+    service = RentalService(db_session, rental_repo, hw_repo)
+    
+    hw = hw_repo.create(name="MacBook", brand="Apple", status=HardwareStatus.AVAILABLE)
+    db_session.commit()
+    
+    rental = service.create_rental(hardware_id=hw.id, user_id=test_user.id)
+    
+    # Try to return by a different non-admin user
+    with pytest.raises(RentalNotOwnedException):
+        service.return_rental(rental.id, 9999) # some other user_id
+
+def test_return_rental_not_found(db_session, test_user):
     hw_repo = HardwareRepository(db_session)
     rental_repo = RentalRepository(db_session)
     service = RentalService(db_session, rental_repo, hw_repo)
     
     with pytest.raises(RentalNotFoundError):
-        service.update_rental(999, RentalUpdate(returned_at=datetime.now()))
+        service.return_rental(999, test_user.id)
 
 def test_get_rental(db_session, test_user):
     hw_repo = HardwareRepository(db_session)
@@ -123,15 +135,31 @@ def test_atomic_transaction_rollback(db_session, test_user):
     hw = hw_repo.create(name="MacBook", brand="Apple", status=HardwareStatus.AVAILABLE)
     db_session.commit()
     
-    with unittest.mock.patch.object(db_session, 'commit', side_effect=Exception("DB Error")) as mock_commit:
+    hw_id = hw.id
+    user_id = test_user.id
+    
+    # We mock commit to raise Exception.
+    # We also mock rollback to manually revert the DB changes, because calling the real 
+    # SQLAlchemy rollback() in this SQLite test setup wipes the entire outer test transaction.
+    with unittest.mock.patch.object(db_session, 'commit', side_effect=Exception("DB Error")):
         with unittest.mock.patch.object(db_session, 'rollback') as mock_rollback:
+            
+            def fake_rollback():
+                from sqlalchemy import text
+                # Manually simulate the rollback of the flushed changes
+                db_session.execute(text("UPDATE hardware SET status='AVAILABLE' WHERE id=:id"), {"id": hw_id})
+                db_session.execute(text("DELETE FROM rentals WHERE hardware_id=:id"), {"id": hw_id})
+                db_session.expire_all()
+                
+            mock_rollback.side_effect = fake_rollback
+            
             with pytest.raises(Exception, match="DB Error"):
-                service.create_rental(hw.id, test_user.id)
-            
-            mock_rollback.assert_called_once()
-            
-    # Since we mocked rollback, the session state is technically dirty, but we proved it tried to rollback.
-    db_session.rollback() # Clean up manually
+                service.create_rental(hw_id, user_id)
+                
+    # Verify DB behavior (as requested in the audit)
+    hw_in_db = hw_repo.get_by_id(hw_id)
+    assert hw_in_db is not None
+    assert hw_in_db.status == HardwareStatus.AVAILABLE
     
     rentals = rental_repo.list()
-    assert not any(r.hardware_id == hw.id for r in rentals)
+    assert not any(r.hardware_id == hw_id for r in rentals)

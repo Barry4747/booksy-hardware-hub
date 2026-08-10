@@ -10,13 +10,20 @@ class HardwareRepository:
     def get_by_id(self, id: int) -> Hardware | None:
         return self.db.query(Hardware).filter(Hardware.id == id).first()
 
-    def list(self, skip: int = 0, limit: int = 100, filters: dict[str, Any] | None = None, sort_by: str | None = None, sort_desc: bool = False) -> list[Hardware]:
+    def list(self, skip: int = 0, limit: int = 100, filters: dict[str, Any] | None = None, search: str | None = None, sort_by: str | None = None, sort_desc: bool = False) -> list[Hardware]:
+        from sqlalchemy import or_
         query = self.db.query(Hardware)
         
         if filters:
             for key, value in filters.items():
                 if hasattr(Hardware, key) and value is not None:
                     query = query.filter(getattr(Hardware, key) == value)
+                    
+        if search:
+            query = query.filter(or_(
+                Hardware.name.ilike(f'%{search}%'),
+                Hardware.serial_number.ilike(f'%{search}%')
+            ))
                     
         if sort_by and hasattr(Hardware, sort_by):
             order_func = desc if sort_desc else asc

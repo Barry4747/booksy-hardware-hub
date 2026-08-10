@@ -1,4 +1,8 @@
+import logging
 from fastapi import Depends, Request
+from jose import JWTError, ExpiredSignatureError
+
+logger = logging.getLogger(__name__)
 from app.exceptions.auth import TokenMissingError, InvalidTokenError, UserNotFoundError, NotEnoughPrivilegesError
 from app.api.dependencies.core import get_user_repository
 from app.repositories.users import UserRepository
@@ -19,8 +23,12 @@ def get_current_user(
         if payload.get("type") != "access":
             raise InvalidTokenError(detail="Invalid token type")
         user_id = int(payload.get("sub"))
-    except Exception:
-        raise InvalidTokenError()
+    except ExpiredSignatureError:
+        logger.debug("Expired token received")
+        raise InvalidTokenError(detail="Token has expired.")
+    except (JWTError, ValueError, TypeError) as e:
+        logger.debug(f"Invalid token: {e}")
+        raise InvalidTokenError(detail="Invalid token.")
         
     user = user_repo.get_by_id(user_id)
     if not user:

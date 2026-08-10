@@ -17,6 +17,7 @@ class Hardware(Base):
     purchase_date = Column(Date, nullable=True)
     status = Column(Enum(HardwareStatus), default=HardwareStatus.AVAILABLE, nullable=False)
     notes = Column(String, nullable=True)
+    serial_number = Column(String, nullable=True)
     created_at = Column(DateTime, default=func.now())
 
     rentals = relationship("Rental", back_populates="hardware", cascade="all, delete-orphan")

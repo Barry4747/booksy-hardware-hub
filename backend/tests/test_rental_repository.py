@@ -74,3 +74,12 @@ def test_rental_repository_list_and_filters(db_session, test_user, test_admin):
     
     hw1_rentals = repo.list(filters={"hardware_id": hw1.id})
     assert len(hw1_rentals) == 2
+
+def test_rental_repository_foreign_key_enforcement(db_session, test_user):
+    from sqlalchemy.exc import IntegrityError
+    
+    repo = RentalRepository(db_session)
+    # Try to insert a rental with a non-existent hardware_id (e.g., 9999)
+    with pytest.raises(IntegrityError):
+        repo.create(hardware_id=9999, user_id=test_user.id)
+        # Flush is called inside create, so it will trigger the DB exception immediately

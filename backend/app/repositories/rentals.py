@@ -1,5 +1,5 @@
 from typing import Any
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, asc
 from app.models.rental import Rental
 
@@ -8,10 +8,16 @@ class RentalRepository:
         self.db = db
 
     def get_by_id(self, id: int) -> Rental | None:
-        return self.db.query(Rental).filter(Rental.id == id).first()
+        return self.db.query(Rental).options(joinedload(Rental.hardware)).filter(Rental.id == id).first()
+
+    def get_active_by_hardware(self, hardware_id: int) -> Rental | None:
+        return self.db.query(Rental).filter(
+            Rental.hardware_id == hardware_id,
+            Rental.returned_at == None
+        ).first()
 
     def list(self, skip: int = 0, limit: int = 100, filters: dict[str, Any] | None = None, sort_by: str | None = None, sort_desc: bool = False) -> list[Rental]:
-        query = self.db.query(Rental)
+        query = self.db.query(Rental).options(joinedload(Rental.hardware))
         
         if filters:
             for key, value in filters.items():

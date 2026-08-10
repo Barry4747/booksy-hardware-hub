@@ -19,3 +19,17 @@ class HardwareUnavailableError(RentalError):
             detail="Hardware is not available for rental",
             status_code=status.HTTP_409_CONFLICT
         )
+
+class RentalAlreadyReturnedException(RentalError):
+    def __init__(self):
+        super().__init__(
+            detail="Rental has already been returned",
+            status_code=status.HTTP_409_CONFLICT
+        )
+
+class RentalNotOwnedException(RentalError):
+    def __init__(self):
+        super().__init__(
+            detail="Rental does not belong to the current user",
+            status_code=status.HTTP_403_FORBIDDEN
+        )

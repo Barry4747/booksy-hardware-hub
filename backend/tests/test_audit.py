@@ -4,7 +4,8 @@ from app.services.audit import AuditService
 from app.repositories.hardware import HardwareRepository
 from app.schemas.audit import AuditReport, AuditIssue, SeverityEnum
 
-def test_gemini_audit_success(db_session):
+@pytest.mark.anyio
+async def test_gemini_audit_success(db_session):
     hw_repo = HardwareRepository(db_session)
     service = AuditService(db_session, hw_repo)
     
@@ -27,7 +28,7 @@ def test_gemini_audit_success(db_session):
     """
     
     with patch.object(service.client.models, 'generate_content', return_value=mock_response) as mock_gen:
-        report = service.run_audit()
+        report = await service.run_audit()
         
         mock_gen.assert_called_once()
         assert isinstance(report, AuditReport)
@@ -37,7 +38,8 @@ def test_gemini_audit_success(db_session):
         assert report.issues[0].severity == SeverityEnum.CRITICAL
         assert report.summary == "Found 1 critical issue."
 
-def test_gemini_audit_parse_failure(db_session):
+@pytest.mark.anyio
+async def test_gemini_audit_parse_failure(db_session):
     hw_repo = HardwareRepository(db_session)
     service = AuditService(db_session, hw_repo)
     
@@ -47,7 +49,7 @@ def test_gemini_audit_parse_failure(db_session):
     with patch.object(service.client.models, 'generate_content', return_value=mock_response):
         from app.exceptions.audit import AuditGenerationError
         with pytest.raises(AuditGenerationError) as excinfo:
-            service.run_audit()
+            await service.run_audit()
         
         assert excinfo.value.status_code == 500
         assert "Audit failed" in excinfo.value.detail

@@ -7,11 +7,12 @@ export async function rent(hardwareId: number) {
 }
 
 export async function returnRental(rentalId: number) {
-  const { data } = await api.patch<Rental>(`/api/rentals/${rentalId}`, { returned_at: new Date().toISOString() })
+  const { data } = await api.post<Rental>(`/api/rentals/${rentalId}/return`)
   return data
 }
 
-export async function getMyRentals() {
-  const { data } = await api.get<Rental[]>('/api/rentals')
+export async function getMyRentals(userId?: number) {
+  const params = userId ? { user_id: userId } : undefined
+  const { data } = await api.get<Rental[]>('/api/rentals', { params })
   return data
 }

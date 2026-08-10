@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import AppNavbar from './components/shared/AppNavbar.vue'
+import AppLayout from './layouts/AppLayout.vue'
 import AppToast from './components/shared/AppToast.vue'
 </script>
 
 <template>
-  <div class="app-layout">
-    <AppNavbar />
-    <main class="main-content">
-      <RouterView />
-    </main>
-    <AppToast />
-  </div>
+  <AppLayout>
+    <RouterView />
+  </AppLayout>
+  <AppToast />
 </template>
 
 <style>
-/* Global Reset and Base Styles */
-* {
+*, *::before, *::after {
   box-sizing: border-box;
+}
+
+html, body, #app {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   margin: 0;
   padding: 0;
 }
@@ -29,17 +31,7 @@ body {
   background-color: #f3f4f6;
   color: #111827;
   line-height: 1.6;
-}
-
-.app-layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: row;
-}
-
-.main-content {
-  flex: 1;
-  padding: 2.5rem 3rem;
-  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 </style>

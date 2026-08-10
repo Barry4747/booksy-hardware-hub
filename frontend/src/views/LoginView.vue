@@ -207,4 +207,26 @@ input:disabled {
   cursor: not-allowed;
   opacity: 0.8;
 }
+
+@media (max-width: 768px) {
+  .login-container {
+    padding: 0 16px;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .login-card {
+    padding: 1.5rem 1rem;
+  }
+
+  input {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
 </style>

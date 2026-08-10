@@ -45,22 +45,16 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // 1. Call authStore.fetchMe() if user is null and route requires auth
-  if (to.meta.requiresAuth && !authStore.user) {
+  if (!authStore.user && to.meta.requiresAuth) {
     await authStore.fetchMe()
   }
-
-  // 2. If user is not logged in and route requires auth -> redirect to /login
   if (to.meta.requiresAuth && !authStore.user) {
     return next('/login')
   }
-
-  // 3. If user is not admin and route requires admin -> redirect to /
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
     return next('/')
   }
 
-  // 4. If user is logged in and tries to access /login -> redirect to /
   if (authStore.user && to.path === '/login') {
     return next('/')
   }

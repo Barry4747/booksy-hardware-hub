@@ -37,7 +37,7 @@ def test_return_rental(client, test_user, test_admin):
     rent_resp = client.post("/api/rentals", json={"hardware_id": hw_id})
     rental_id = rent_resp.json()["id"]
     
-    ret_resp = client.patch(f"/api/rentals/{rental_id}", json={"returned_at": datetime.now().isoformat()})
+    ret_resp = client.post(f"/api/rentals/{rental_id}/return")
     assert ret_resp.status_code == 200
     assert ret_resp.json()["returned_at"] is not None
     
@@ -107,7 +107,7 @@ def test_return_rental_wrong_user(client, test_user, test_admin):
     client.post("/api/users", json={"email": "wrong@example.com", "password": "password123", "is_admin": False})
     
     client.post("/api/auth/login", json={"email": "wrong@example.com", "password": "password123"})
-    ret_resp = client.patch(f"/api/rentals/{rental_id}", json={"returned_at": datetime.now().isoformat()})
+    ret_resp = client.post(f"/api/rentals/{rental_id}/return")
     assert ret_resp.status_code == 403
 
 def test_return_already_returned(client, test_user, test_admin):
@@ -119,8 +119,8 @@ def test_return_already_returned(client, test_user, test_admin):
     rent_resp = client.post("/api/rentals", json={"hardware_id": hw_id})
     rental_id = rent_resp.json()["id"]
     
-    ret_resp1 = client.patch(f"/api/rentals/{rental_id}", json={"returned_at": datetime.now().isoformat()})
+    ret_resp1 = client.post(f"/api/rentals/{rental_id}/return")
     assert ret_resp1.status_code == 200
     
-    ret_resp2 = client.patch(f"/api/rentals/{rental_id}", json={"returned_at": datetime.now().isoformat()})
-    assert ret_resp2.status_code == 200
+    ret_resp2 = client.post(f"/api/rentals/{rental_id}/return")
+    assert ret_resp2.status_code == 409

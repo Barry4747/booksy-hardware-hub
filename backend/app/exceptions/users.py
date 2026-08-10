@@ -12,3 +12,10 @@ class UserAlreadyExistsError(UserError):
             detail="User with this email already exists", 
             status_code=status.HTTP_409_CONFLICT
         )
+
+class UserNotFoundError(UserError):
+    def __init__(self):
+        super().__init__(
+            detail="User not found",
+            status_code=status.HTTP_404_NOT_FOUND
+        )
