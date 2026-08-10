@@ -3,6 +3,7 @@ import router from '../router'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
+  // withCredentials required for HttpOnly cookies on cross-origin requests
   withCredentials: true
 })
 
@@ -23,10 +24,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // If the error is 401 Unauthorized and we haven't already retried this request
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
+      // Concurrency lock — only one refresh fires regardless of concurrent 401s
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           subscribeToRefresh((success) => {
@@ -40,9 +41,7 @@ api.interceptors.response.use(
       }
 
       isRefreshing = true
-
       try {
-        // Attempt to refresh the token
         await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
           {},
@@ -51,14 +50,11 @@ api.interceptors.response.use(
         
         isRefreshing = false
         notifySubscribers(true)
-        
-        // Retry the original request
         return api(originalRequest)
       } catch (refreshError) {
         isRefreshing = false
         notifySubscribers(false)
         
-        // If refresh fails, clear local user state and redirect to login
         const { useAuthStore } = await import('../stores/auth')
         const authStore = useAuthStore()
         authStore.user = null

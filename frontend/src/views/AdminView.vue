@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getAll, create, update, remove } from '../services/hardware'
 import { runAudit } from '../services/audit'
@@ -13,11 +13,7 @@ const toastStore = useToastStore()
 const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-
-// UI State
 const activeTab = ref<'hardware' | 'users' | 'audit'>('hardware')
-
-// Hardware Management
 const hardwareItems = ref<Hardware[]>([])
 const loadingHardware = ref(false)
 const showHardwareForm = ref(false)
@@ -35,7 +31,6 @@ const hwForm = ref<HardwareCreate>({
 async function fetchHardware() {
   loadingHardware.value = true
   try {
-    // Get a larger limit for the admin panel to view all items easily
     hardwareItems.value = await getAll({ limit: 100 })
   } catch (error: any) {
     toastStore.add('Failed to fetch hardware', 'error')
@@ -110,8 +105,6 @@ async function toggleRepair(hw: Hardware) {
     toastStore.add(error.response?.data?.detail || 'Failed to change status', 'error')
   }
 }
-
-// User Management
 const userForm = ref({
   email: '',
   password: '',
@@ -151,13 +144,13 @@ async function handleDeleteUser(id: number) {
   try {
     const result = await deleteUser(id)
     if (result.force_closed_rentals > 0) {
-      toastStore.add(`User deleted. ${result.force_closed_rentals} active rentals were force-closed and hardware returned.`, 'warning')
+      toastStore.add(`User deleted. ${result.force_closed_rentals} active rentals were force-closed and hardware returned.`, 'info')
     } else {
       toastStore.add('User deleted successfully.', 'success')
     }
     
     if (id === authStore.user?.id) {
-      toastStore.add('You deleted your own account. Logging out...', 'warning')
+      toastStore.add('You deleted your own account. Logging out...', 'info')
       authStore.user = null
       router.push('/login')
       return
@@ -168,8 +161,6 @@ async function handleDeleteUser(id: number) {
     toastStore.add(error.response?.data?.detail || 'Failed to delete user', 'error')
   }
 }
-
-// Audit Section
 const auditReport = ref<AuditReport | null>(null)
 const isRunningAudit = ref(false)
 
@@ -192,7 +183,7 @@ function goToHardwareEdit(hardwareId: number) {
     activeTab.value = 'hardware'
     openEditForm(item)
   } else {
-    toastStore.add('Hardware not found in current list', 'warning')
+    toastStore.add('Hardware not found in current list', 'info')
   }
 }
 
@@ -210,7 +201,6 @@ onMounted(() => {
     if (route.query.run === 'true') {
       handleRunAudit()
     }
-    // Clean up query params so it doesn't run again on refresh
     router.replace({ query: {} })
   }
 })

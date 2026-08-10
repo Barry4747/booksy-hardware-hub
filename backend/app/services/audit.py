@@ -97,5 +97,4 @@ Inventory:
                 summary=data.get("summary", "Audit completed.")
             )
         except Exception as e:
-            print(f"Error during audit: {e}")
             raise AuditGenerationError(detail=f"Audit failed: {str(e)}")

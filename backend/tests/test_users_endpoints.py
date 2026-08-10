@@ -59,7 +59,7 @@ def test_delete_user_no_rentals(client, test_admin):
     client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
     
     # Create user to delete
-    create_resp = client.post("/api/users", json={"email": "delete_me@example.com", "password": "pass"})
+    create_resp = client.post("/api/users", json={"email": "delete_me@example.com", "password": "password123"})
     user_id = create_resp.json()["id"]
     
     del_resp = client.delete(f"/api/users/{user_id}")
@@ -75,10 +75,10 @@ def test_delete_user_with_active_rentals(client, test_admin):
     hw2 = client.post("/api/hardware", json={"name": "PC2", "brand": "Dell"}).json()
     
     # Create user
-    user = client.post("/api/users", json={"email": "active_renter@example.com", "password": "pass"}).json()
+    user = client.post("/api/users", json={"email": "active_renter@example.com", "password": "password123"}).json()
     
     # Login as new user to rent
-    client.post("/api/auth/login", json={"email": "active_renter@example.com", "password": "pass"})
+    client.post("/api/auth/login", json={"email": "active_renter@example.com", "password": "password123"})
     client.post("/api/rentals", json={"hardware_id": hw1["id"]})
     client.post("/api/rentals", json={"hardware_id": hw2["id"]})
     
@@ -97,9 +97,9 @@ def test_delete_user_with_returned_rentals(client, test_admin):
     client.post("/api/auth/login", json={"email": test_admin.email, "password": "admin123"})
     
     hw1 = client.post("/api/hardware", json={"name": "PC3", "brand": "Dell"}).json()
-    user = client.post("/api/users", json={"email": "past_renter@example.com", "password": "pass"}).json()
+    user = client.post("/api/users", json={"email": "past_renter@example.com", "password": "password123"}).json()
     
-    client.post("/api/auth/login", json={"email": "past_renter@example.com", "password": "pass"})
+    client.post("/api/auth/login", json={"email": "past_renter@example.com", "password": "password123"})
     rent_resp = client.post("/api/rentals", json={"hardware_id": hw1["id"]}).json()
     
     # Return it

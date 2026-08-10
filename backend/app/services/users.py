@@ -23,6 +23,10 @@ class UserService:
         return UserResponse.model_validate(user)
 
     def delete_user(self, user_id: int) -> DeleteUserResponse:
+        """
+        Deletes a user and force-returns any of their active hardware rentals.
+        Raises: UserNotFoundError if missing, UserError if attempting to delete the last admin.
+        """
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise UserNotFoundError()

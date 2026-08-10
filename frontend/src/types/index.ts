@@ -5,6 +5,12 @@ export interface User {
   created_at: string
 }
 
+export interface UserCreate {
+  email: string
+  password: string
+  is_admin?: boolean
+}
+
 export interface Hardware {
   id: number
   name: string

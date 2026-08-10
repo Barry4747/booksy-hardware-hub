@@ -28,6 +28,10 @@ class HardwareService:
         return HardwareResponse.model_validate(hw)
 
     def update_hardware(self, id: int, hardware_in: HardwareUpdate) -> HardwareResponse:
+        """
+        Updates hardware attributes while enforcing status transition rules.
+        Raises: InvalidStatusTransitionError if attempting to set 'In Use' directly or 'Repair' while rented.
+        """
         hw = self.hw_repo.get_by_id(id)
         if not hw:
             raise HardwareNotFoundError()
@@ -52,6 +56,10 @@ class HardwareService:
         return HardwareResponse.model_validate(hw)
 
     def delete_hardware(self, id: int) -> None:
+        """
+        Deletes a hardware item if it has no active rentals.
+        Raises: HardwareStillRentedError if an active rental exists.
+        """
         hw = self.hw_repo.get_by_id(id)
         if not hw:
             raise HardwareNotFoundError()

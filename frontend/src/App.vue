@@ -15,7 +15,6 @@ import AppToast from './components/shared/AppToast.vue'
 </template>
 
 <style>
-/* Global Reset and Base Styles */
 * {
   box-sizing: border-box;
   margin: 0;

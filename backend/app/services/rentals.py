@@ -26,6 +26,10 @@ class RentalService:
         return [RentalResponse.model_validate(r) for r in rentals]
 
     def create_rental(self, hardware_id: int, user_id: int) -> RentalResponse:
+        """
+        Creates a new rental and marks the hardware as 'In Use' within a single transaction.
+        Raises: HardwareUnavailableError if the hardware is not available.
+        """
         hw = self.hw_repo.get_by_id(hardware_id)
         if not hw:
             raise HardwareNotFoundError()
@@ -44,6 +48,10 @@ class RentalService:
             raise e
 
     def return_rental(self, id: int, user_id: int, is_admin: bool = False) -> RentalResponse:
+        """
+        Marks a rental as returned and restores hardware to 'Available' within a single transaction.
+        Raises: RentalNotOwnedException if a regular user tries to return another user's rental.
+        """
         rental = self.rental_repo.get_by_id(id)
         if not rental:
             raise RentalNotFoundError()

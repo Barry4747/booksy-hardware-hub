@@ -10,7 +10,7 @@ const authStore = useAuthStore()
 
 const rentals = ref<Rental[]>([])
 const loading = ref(false)
-const showOnlyMine = ref(true) // Default to true so it behaves like 'My Rentals' by default
+const showOnlyMine = ref(true)
 
 async function fetchRentals() {
   loading.value = true

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive } from 'vue'
+import { ref, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getAll } from '../services/hardware'
@@ -15,13 +15,11 @@ const authStore = useAuthStore()
 const items = ref<Hardware[]>([])
 const loading = ref(false)
 
-// Pagination
 const page = ref(1)
 const limit = ref(10)
 const totalCount = ref(0)
 const hasNext = ref(false)
 
-// Filters & Sorting
 const statusFilter = ref<string>('')
 const sortBy = ref<string>('created_at')
 const sortOrder = ref<'asc' | 'desc'>('desc')
@@ -65,6 +63,7 @@ function toggleSort(field: string) {
   }
 }
 
+// rentingIds tracks in-flight requests to prevent double-click race conditions
 const rentingIds = reactive(new Set<number>())
 
 async function handleRent(id: number) {
