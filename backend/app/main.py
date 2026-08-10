@@ -16,7 +16,7 @@ app = FastAPI(title="Booksy Hardware Hub")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://booksy-hardware-hub.vercel.app"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://booksy-hardware-hub.vercel.app", "https://booksy-hardware-hub-umber.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
