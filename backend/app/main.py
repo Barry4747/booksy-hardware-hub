@@ -12,7 +12,11 @@ from app.core.rate_limit import limiter
 
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.db.base import Base, engine
+
 app = FastAPI(title="Booksy Hardware Hub")
+
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
