@@ -5,8 +5,7 @@ const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').r
 
 const api = axios.create({
   baseURL: baseURL,
-  // withCredentials required for HttpOnly cookies on cross-origin requests
-  withCredentials: true
+  withCredentials: true // IMPORTANT: sends cookies with every request
 })
 
 let isRefreshing = false
@@ -49,14 +48,14 @@ api.interceptors.response.use(
           {},
           { withCredentials: true }
         )
-        
+
         isRefreshing = false
         notifySubscribers(true)
         return api(originalRequest)
       } catch (refreshError) {
         isRefreshing = false
         notifySubscribers(false)
-        
+
         const { useAuthStore } = await import('../stores/auth')
         const authStore = useAuthStore()
         authStore.user = null
