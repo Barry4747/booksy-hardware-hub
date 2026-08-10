@@ -1,8 +1,10 @@
 import axios from 'axios'
 import router from '../router'
 
+const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '')
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: baseURL,
   // withCredentials required for HttpOnly cookies on cross-origin requests
   withCredentials: true
 })
