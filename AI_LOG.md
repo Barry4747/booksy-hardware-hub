@@ -526,6 +526,15 @@
 **What AI decided and why:**
 - **Endpoint Tests:** Renamed and added explicit tests for deleting in-use hardware (409) and attempting to delete the last admin (409), as well as admins deleting themselves (409), ensuring the API layer strictly adheres to the status guards.
 - **Service Tests:** Added specific tests in \	est_hardware_service.py\ asserting that \update_hardware\ correctly raises \InvalidStatusTransitionError\ when attempting to set \In Use\ directly or setting to \Repair\ while rented.
-- **Behavior-Driven Rollback Test:** Replaced the mock-verification test for atomic transactions with a behavior-focused test. By mocking \commit()\ to fail and manually triggering a \
-ollback()\, we verified the actual database state remains clean (no phantom rentals and hardware stays \Available\), which is far more robust than just asserting \
-ollback()\ was called.
+- **Behavior-Driven Rollback Test:** Replaced the mock-verification test for atomic transactions with a behavior-focused test. By mocking `commit()` to fail and manually triggering a `rollback()`, we verified the actual database state remains clean (no phantom rentals and hardware stays `Available`), which is far more robust than just asserting `rollback()` was called.
+
+## Mobile Responsiveness Pass
+**Prompt used:**
+> You are a senior frontend engineer performing a mobile responsiveness pass on "Booksy Hardware Hub" — a Vue 3 + TypeScript application.
+
+**What AI decided and why:**
+- **CSS-Only Approach:** Adhered to the strict constraint of only modifying `<style scoped>` and global styles without touching component structures or logic.
+- **Global Layout (`App.vue`):** Added a media query to stack `.app-layout` vertically and reduced main padding to maximize content width on smaller viewports.
+- **Top Navbar (`AppNavbar.vue`):** Transformed the left sidebar into a sticky top navigation bar using `flex-direction: row` with horizontal scrolling (`overflow-x: auto`) for nav links, ensuring all touch targets remain accessible and at least 44x44px.
+- **Fluid Tables (`DashboardView.vue`, `MyRentalsView.vue`, `AdminView.vue`):** Switched data tables to `display: block` with `overflow-x: auto` (or utilized existing `.table-wrapper` elements) to enable horizontal scrolling on mobile, preventing page-level overflow while preserving tabular layouts. Minimum width constraints were added to force scroll before column squishing.
+- **Stacking Forms & Toolbars (`LoginView.vue`, `DashboardView.vue`, `AdminView.vue`):** Converted grid rows and flex toolbars into vertical stacks (`flex-direction: column`) so inputs, selects, pagination, and submit buttons take up 100% width on mobile, ensuring a highly readable and tappable experience.

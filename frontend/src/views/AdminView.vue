@@ -740,7 +740,6 @@ onMounted(() => {
 .action-btn.delete { color: #ef4444; opacity: 0.7; }
 .action-btn.delete:hover { opacity: 1; }
 
-/* Audit Section */
 .audit-header {
   display: flex;
   justify-content: flex-end;
@@ -848,5 +847,77 @@ onMounted(() => {
 }
 .issue-body strong {
   color: #111827;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .primary-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  
+  .tab-btn {
+    min-height: 44px;
+    padding: 0 16px;
+  }
+
+  .form-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .form-group input, .form-group select {
+    min-height: 44px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .cancel-btn, .submit-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  table {
+    min-width: 560px;
+  }
+
+  .action-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem;
+  }
+
+  .audit-summary-card, .issue-card {
+    padding: 1rem;
+  }
+
+  .issue-header {
+    flex-wrap: wrap;
+  }
 }
 </style>

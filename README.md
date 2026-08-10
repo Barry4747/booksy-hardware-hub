@@ -43,3 +43,4 @@
 - Improved JWT decoding error handling by catching specific exceptions and adding debug logging.
 - Added frontend UI guards to prevent admins from attempting to mark hardware as 'Repair' when it is currently in use, and removed unused imports.
 - Completed critical test coverage focusing on state transitions, user deletion constraints, and atomic rollback behaviors.
+- **Mobile Responsiveness:** Completed a CSS-only responsiveness pass, ensuring all views, tables, and toolbars function perfectly on viewports down to 360px without modifying core component templates.

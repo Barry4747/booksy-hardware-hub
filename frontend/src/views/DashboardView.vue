@@ -108,47 +108,49 @@ function goToAudit() {
     </div>
 
     <!-- Data Table -->
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th @click="toggleSort('name')" class="sortable">
-            Device Name<span v-if="sortBy === 'name'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
-          </th>
-          <th @click="toggleSort('brand')" class="sortable th-center">
-            Brand<span v-if="sortBy === 'brand'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
-          </th>
-          <th @click="toggleSort('created_at')" class="sortable th-center">
-            Date Added<span v-if="sortBy === 'created_at'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
-          </th>
-          <th class="th-center">Status</th>
-          <th class="th-center">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-if="loading">
-          <td colspan="5" class="empty-state">Loading inventory...</td>
-        </tr>
-        <tr v-else-if="items.length === 0">
-          <td colspan="5" class="empty-state">No hardware found.</td>
-        </tr>
-        <tr v-else v-for="item in items" :key="item.id" class="table-row">
-          <td class="col-name">{{ item.name }}</td>
-          <td class="col-accent col-center">{{ item.brand }}</td>
-          <td class="col-accent col-center">{{ formatDate(item.created_at) }}</td>
-          <td class="col-center"><StatusBadge :status="item.status" /></td>
-          <td class="col-center">
-            <button
-              class="rent-btn"
-              :class="{ 'rent-btn--inactive': item.status !== 'Available' || rentingIds.has(item.id) }"
-              :disabled="item.status !== 'Available' || rentingIds.has(item.id)"
-              @click="handleRent(item.id)"
-            >
-              {{ rentingIds.has(item.id) ? 'Renting...' : 'Rent' }}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th @click="toggleSort('name')" class="sortable">
+              Device Name<span v-if="sortBy === 'name'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            </th>
+            <th @click="toggleSort('brand')" class="sortable th-center">
+              Brand<span v-if="sortBy === 'brand'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            </th>
+            <th @click="toggleSort('created_at')" class="sortable th-center">
+              Date Added<span v-if="sortBy === 'created_at'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            </th>
+            <th class="th-center">Status</th>
+            <th class="th-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading">
+            <td colspan="5" class="empty-state">Loading inventory...</td>
+          </tr>
+          <tr v-else-if="items.length === 0">
+            <td colspan="5" class="empty-state">No hardware found.</td>
+          </tr>
+          <tr v-else v-for="item in items" :key="item.id" class="table-row">
+            <td class="col-name">{{ item.name }}</td>
+            <td class="col-accent col-center">{{ item.brand }}</td>
+            <td class="col-accent col-center">{{ formatDate(item.created_at) }}</td>
+            <td class="col-center"><StatusBadge :status="item.status" /></td>
+            <td class="col-center">
+              <button
+                class="rent-btn"
+                :class="{ 'rent-btn--inactive': item.status !== 'Available' || rentingIds.has(item.id) }"
+                :disabled="item.status !== 'Available' || rentingIds.has(item.id)"
+                @click="handleRent(item.id)"
+              >
+                {{ rentingIds.has(item.id) ? 'Renting...' : 'Rent' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- Pagination -->
     <div class="pagination-footer">
@@ -315,5 +317,64 @@ function goToAudit() {
   outline: none;
   font-family: inherit;
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .audit-action-btn {
+    min-height: 44px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  table {
+    min-width: 560px;
+  }
+
+  .data-table th, .data-table td {
+    white-space: nowrap;
+  }
+
+  .rent-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .pagination-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .pagination-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .page-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-select {
+    width: 100%;
+    min-height: 44px;
+  }
 }
 </style>

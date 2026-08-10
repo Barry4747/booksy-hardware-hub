@@ -173,4 +173,56 @@ async function handleLogout() {
 .logout-btn:hover {
   background-color: #fef2f2;
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.5rem;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 1000;
+  }
+
+  .sidebar-header {
+    margin-bottom: 0;
+    padding: 0.5rem;
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  .nav-links {
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    align-items: center;
+  }
+
+  .nav-link {
+    min-height: 44px;
+    min-width: 44px;
+    white-space: nowrap;
+  }
+
+  .sidebar-footer {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+    margin-left: auto;
+  }
+
+  .logout-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem;
+  }
+  
+  .logout-btn text {
+    display: none;
+  }
+}
 </style>

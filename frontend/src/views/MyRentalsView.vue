@@ -245,4 +245,27 @@ function formatDate(dateStr: string | null) {
   color: #6b7280;
   font-style: italic;
 }
+
+@media (max-width: 768px) {
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  table {
+    min-width: 560px;
+  }
+
+  .return-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .header-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
 </style>
