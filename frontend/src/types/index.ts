@@ -18,6 +18,7 @@ export interface Hardware {
   purchase_date: string | null
   status: 'Available' | 'In Use' | 'Repair'
   notes: string | null
+  serial_number: string | null
   created_at: string
 }
 

@@ -9,6 +9,7 @@ class HardwareBase(BaseModel):
     purchase_date: Optional[date] = None
     status: HardwareStatus = HardwareStatus.AVAILABLE
     notes: Optional[str] = None
+    serial_number: Optional[str] = None
 
 class HardwareCreate(HardwareBase):
     pass
@@ -19,6 +20,7 @@ class HardwareUpdate(BaseModel):
     purchase_date: Optional[date] = None
     status: Optional[HardwareStatus] = None
     notes: Optional[str] = None
+    serial_number: Optional[str] = None
 
 class HardwareResponse(HardwareBase):
     id: int

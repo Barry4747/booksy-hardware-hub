@@ -112,17 +112,17 @@ function goToAudit() {
       <table class="data-table">
         <thead>
           <tr>
-            <th @click="toggleSort('name')" class="sortable">
+            <th @click="toggleSort('name')" class="sortable" style="width: 30%">
               Device Name<span v-if="sortBy === 'name'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
             </th>
-            <th @click="toggleSort('brand')" class="sortable th-center">
+            <th @click="toggleSort('brand')" class="sortable th-center" style="width: 20%">
               Brand<span v-if="sortBy === 'brand'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
             </th>
-            <th @click="toggleSort('created_at')" class="sortable th-center">
+            <th @click="toggleSort('created_at')" class="sortable th-center" style="width: 20%">
               Date Added<span v-if="sortBy === 'created_at'" class="sort-icon">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
             </th>
-            <th class="th-center">Status</th>
-            <th class="th-center">Action</th>
+            <th class="th-center" style="width: 15%">Status</th>
+            <th class="th-center" style="width: 15%">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -228,6 +228,7 @@ function goToAudit() {
   border-radius: 12px;
   overflow: hidden;
   text-align: left;
+  table-layout: fixed;
 }
 .data-table th {
   padding: 1rem 1.5rem;
@@ -236,6 +237,8 @@ function goToAudit() {
   color: #111827;
   border-bottom: 1px solid #f3f4f6;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .sortable { cursor: pointer; user-select: none; }
 .sortable:hover { color: #374151; }
@@ -245,6 +248,9 @@ function goToAudit() {
   padding: 1rem 1.5rem;
   font-size: 0.85rem;
   border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .table-row:last-child td { border-bottom: none; }
 .table-row:hover td { background-color: #fafafa; }

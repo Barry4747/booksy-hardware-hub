@@ -63,12 +63,12 @@ function formatDate(dateStr: string | null) {
       <table class="data-table">
         <thead>
           <tr>
-            <th>Device Name</th>
-            <th>Brand</th>
-            <th v-if="authStore.isAdmin && !showOnlyMine">User ID</th>
-            <th>Rented At</th>
-            <th>Status</th>
-            <th class="action-column">Action</th>
+            <th style="width: 25%">Device Name</th>
+            <th style="width: 15%">Brand</th>
+            <th v-if="authStore.isAdmin && !showOnlyMine" style="width: 15%">User ID</th>
+            <th style="width: 20%">Rented At</th>
+            <th style="width: 10%">Status</th>
+            <th class="action-column" style="width: 15%">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -166,6 +166,7 @@ function formatDate(dateStr: string | null) {
   border-radius: 12px;
   overflow: hidden;
   text-align: left;
+  table-layout: fixed;
 }
 
 .data-table th {
@@ -175,12 +176,17 @@ function formatDate(dateStr: string | null) {
   color: #111827;
   border-bottom: 1px solid #f3f4f6;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .data-table td {
   padding: 1rem 1.5rem;
   font-size: 0.85rem;
   border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table-row:last-child td { border-bottom: none; }

@@ -25,7 +25,8 @@ const hwForm = ref<HardwareCreate>({
   brand: '',
   status: 'Available',
   purchase_date: null,
-  notes: null
+  notes: null,
+  serial_number: null
 })
 
 async function fetchHardware() {
@@ -43,7 +44,7 @@ async function fetchHardware() {
 function openAddForm() {
   isEditing.value = false
   editingId.value = null
-  hwForm.value = { name: '', brand: '', status: 'Available', purchase_date: null, notes: null }
+  hwForm.value = { name: '', brand: '', status: 'Available', purchase_date: null, notes: null, serial_number: null }
   showHardwareForm.value = true
 }
 
@@ -55,7 +56,8 @@ function openEditForm(hw: Hardware) {
     brand: hw.brand, 
     status: hw.status, 
     purchase_date: hw.purchase_date, 
-    notes: hw.notes 
+    notes: hw.notes,
+    serial_number: hw.serial_number
   }
   showHardwareForm.value = true
 }
@@ -69,7 +71,8 @@ async function submitHardwareForm() {
     const payload = {
       ...hwForm.value,
       purchase_date: hwForm.value.purchase_date || null,
-      notes: hwForm.value.notes || null
+      notes: hwForm.value.notes || null,
+      serial_number: hwForm.value.serial_number || null
     }
     if (isEditing.value && editingId.value) {
       await update(editingId.value, payload)
@@ -106,6 +109,14 @@ async function toggleRepair(hw: Hardware) {
     toastStore.add(error.response?.data?.detail || 'Failed to change status', 'error')
   }
 }
+const showUserForm = ref(false)
+
+function cancelUserForm() {
+  showUserForm.value = false
+  userForm.value = { email: '', password: '', is_admin: false }
+    showUserForm.value = false
+}
+
 const userForm = ref({
   email: '',
   password: '',
@@ -219,6 +230,13 @@ onMounted(() => {
           </svg>
           Add New Device
         </button>
+        <button v-if="activeTab === 'users'" class="primary-btn" @click="showUserForm = true">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add New User
+        </button>
       </div>
       
       <div class="tabs">
@@ -245,43 +263,54 @@ onMounted(() => {
 
     <!-- HARDWARE MANAGEMENT -->
     <div v-if="activeTab === 'hardware'" class="tab-content">
-      <!-- Hardware Form Modal / Inline -->
-      <div v-if="showHardwareForm" class="form-card">
-        <h3>{{ isEditing ? 'Edit Hardware' : 'New Hardware' }}</h3>
-        <form @submit.prevent="submitHardwareForm" class="admin-form">
-          <div class="form-row">
+      <!-- Hardware Form Modal -->
+      <div v-if="showHardwareForm" class="modal-overlay" @click.self="cancelForm">
+        <div class="modal-card">
+          <button class="modal-close" @click="cancelForm">&times;</button>
+          
+          <div class="modal-header">
+            <h3>{{ isEditing ? 'Edit Device' : 'Add New Device' }}</h3>
+            <p>Enter the details of the {{ isEditing ? '' : 'new ' }}hardware device</p>
+          </div>
+
+          <form @submit.prevent="submitHardwareForm" class="modern-form">
             <div class="form-group">
               <label>Name</label>
-              <input type="text" v-model="hwForm.name" required />
+              <input type="text" v-model="hwForm.name" placeholder="e.g., MacBook Pro 16" required />
             </div>
+            
+            <div class="form-group">
+              <label>Serial Number</label>
+              <input type="text" v-model="hwForm.serial_number" placeholder="e.g., MBP-2024-001" />
+            </div>
+
             <div class="form-group">
               <label>Brand</label>
-              <input type="text" v-model="hwForm.brand" required />
+              <input type="text" v-model="hwForm.brand" placeholder="e.g., Apple" required />
             </div>
-          </div>
-          <div class="form-row">
+
             <div class="form-group">
-              <label>Purchase Date</label>
-              <input type="date" v-model="hwForm.purchase_date" />
+              <label>Notes</label>
+              <input type="text" v-model="hwForm.notes" placeholder="Optional details..." />
             </div>
+
             <div class="form-group">
               <label>Status</label>
-              <select v-model="hwForm.status">
-                <option value="Available">Available</option>
-                <option value="In Use">In Use</option>
-                <option value="Repair">Repair</option>
-              </select>
+              <div class="select-wrapper">
+                <select v-model="hwForm.status">
+                  <option value="Available">Available</option>
+                  <option value="In Use">In Use</option>
+                  <option value="Repair">Repair</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="form-group">
-            <label>Notes</label>
-            <input type="text" v-model="hwForm.notes" placeholder="Optional details..." />
-          </div>
-          <div class="form-actions">
-            <button type="button" class="cancel-btn" @click="cancelForm">Cancel</button>
-            <button type="submit" class="submit-btn">{{ isEditing ? 'Save Changes' : 'Create' }}</button>
-          </div>
-        </form>
+
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" @click="cancelForm">Cancel</button>
+              <button type="submit" class="btn-submit">{{ isEditing ? 'Save Changes' : 'Add Device' }}</button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <!-- Hardware Table -->
@@ -289,12 +318,12 @@ onMounted(() => {
         <table class="data-table">
           <thead>
             <tr>
-              <th>Device Name</th>
-              <th class="th-center">Brand</th>
-              <th class="th-center">Serial Number</th>
-              <th class="th-center">Date Added</th>
-              <th class="th-center">Status</th>
-              <th class="action-column">Actions</th>
+              <th style="width: 25%">Device Name</th>
+              <th class="th-center" style="width: 20%">Brand</th>
+              <th class="th-center" style="width: 15%">Serial Number</th>
+              <th class="th-center" style="width: 15%">Date Added</th>
+              <th class="th-center" style="width: 10%">Status</th>
+              <th class="action-column" style="width: 15%">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -307,7 +336,7 @@ onMounted(() => {
             <tr v-else v-for="item in hardwareItems" :key="item.id" class="table-row">
               <td class="font-medium">{{ item.name }}</td>
               <td class="text-secondary col-center">{{ item.brand }}</td>
-              <td class="text-secondary col-center">#{{ item.id }}</td>
+              <td class="text-secondary col-center">{{ item.serial_number || '-' }}</td>
               <td class="text-secondary col-center">{{ formatDate(item.purchase_date) }}</td>
               <td class="col-center"><StatusBadge :status="item.status" /></td>
               <td class="action-column">
@@ -345,29 +374,37 @@ onMounted(() => {
 
     <!-- USER MANAGEMENT -->
     <div v-if="activeTab === 'users'" class="tab-content">
-      <div class="form-card">
-        <h3>Create New User</h3>
-        <form @submit.prevent="createUser" class="admin-form">
-          <div class="form-group">
-            <label>Email Address</label>
-            <input type="email" v-model="userForm.email" required placeholder="user@example.com" />
+      <!-- User Form Modal -->
+      <div v-if="showUserForm" class="modal-overlay" @click.self="cancelUserForm">
+        <div class="modal-card">
+          <button class="modal-close" @click="cancelUserForm">&times;</button>
+          
+          <div class="modal-header">
+            <h3>Add New User</h3>
+            <p>Enter the details for the new user account</p>
           </div>
-          <div class="form-group">
-            <label>Password</label>
-            <input type="password" v-model="userForm.password" required placeholder="••••••••" />
-          </div>
-          <div class="form-group checkbox-group">
-            <label>
-              <input type="checkbox" v-model="userForm.is_admin" />
-              Give Administrator Privileges
-            </label>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="submit-btn" :disabled="isSubmittingUser">
-              {{ isSubmittingUser ? 'Creating...' : 'Create User' }}
-            </button>
-          </div>
-        </form>
+
+          <form @submit.prevent="createUser" class="modern-form">
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" v-model="userForm.email" required placeholder="user@example.com" />
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" v-model="userForm.password" required placeholder="Min. 8 characters" minlength="8" />
+            </div>
+            <div class="form-checkbox">
+              <input type="checkbox" id="is_admin" v-model="userForm.is_admin" />
+              <label for="is_admin">Grant Administrator Privileges</label>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" @click="cancelUserForm">Cancel</button>
+              <button type="submit" class="btn-submit" :disabled="isSubmittingUser">
+                {{ isSubmittingUser ? 'Adding...' : 'Add User' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <!-- Users Table -->
@@ -375,11 +412,11 @@ onMounted(() => {
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Email</th>
-              <th class="th-center">Admin</th>
-              <th class="th-center">Joined</th>
-              <th class="action-column">Actions</th>
+              <th style="width: 10%">ID</th>
+              <th style="width: 40%">Email</th>
+              <th class="th-center" style="width: 15%">Admin</th>
+              <th class="th-center" style="width: 20%">Joined</th>
+              <th class="action-column" style="width: 15%">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -563,108 +600,163 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Forms */
-.form-card {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #ffffff;
   border-radius: 12px;
-  padding: 1.5rem 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 440px;
+  padding: 1.5rem 2rem 2rem 2rem;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
-.form-card h3 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.1rem;
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s;
+  line-height: 1;
+}
+.modal-close:hover {
   color: #111827;
 }
 
-.admin-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-size: 0.85rem;
+.modal-header h3 {
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #374151;
-}
-
-.form-group input, .form-group select {
-  background-color: #f9fafb;
-  border: 1px solid #d1d5db;
   color: #111827;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  outline: none;
-  transition: all 0.2s ease;
+  margin: 0 0 0.25rem 0;
+}
+.modal-header p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
 }
 
-.form-group input:focus, .form-group select:focus {
-  border-color: #111827;
+.modern-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modern-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.modern-form label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+.modern-form input[type="text"],
+.modern-form input[type="email"],
+.modern-form input[type="password"],
+.modern-form select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, background-color 0.2s;
+  box-sizing: border-box;
+}
+.modern-form input::placeholder {
+  color: #9ca3af;
+}
+.modern-form input:focus,
+.modern-form select:focus {
+  border-color: #3b82f6;
   background-color: #ffffff;
 }
 
-.checkbox-group label {
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper::after {
+  content: '⌄';
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #9ca3af;
+  font-size: 1.2rem;
+}
+.modern-form select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.form-checkbox {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  cursor: pointer;
-  font-size: 0.95rem;
-  color: #374151;
+}
+.form-checkbox input {
+  width: 1rem;
+  height: 1rem;
 }
 
-.form-actions {
+.modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-top: 1rem;
 }
 
-.cancel-btn {
-  background: #f3f4f6;
-  color: #4b5563;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+.btn-cancel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+  padding: 0.6rem 1.25rem;
   font-size: 0.9rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-btn:hover {
-  background: #e5e7eb;
-}
-
-.submit-btn {
-  background-color: #111827;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.2rem;
   border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.btn-cancel:hover {
+  background-color: #f9fafb;
+}
+
+.btn-submit {
+  background: #0f172a;
+  border: 1px solid #0f172a;
+  color: #ffffff;
+  padding: 0.6rem 1.25rem;
   font-size: 0.9rem;
   font-weight: 600;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
 }
-
-.submit-btn:hover {
-  background-color: #374151;
+.btn-submit:hover {
+  opacity: 0.9;
 }
 
 /* Table — Single Panel */
@@ -680,6 +772,7 @@ onMounted(() => {
   border-radius: 12px;
   overflow: hidden;
   text-align: left;
+  table-layout: fixed;
 }
 
 .data-table th {
@@ -689,12 +782,17 @@ onMounted(() => {
   color: #111827;
   border-bottom: 1px solid #f3f4f6;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .data-table td {
   padding: 1rem 1.5rem;
   font-size: 0.85rem;
   border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table-row:last-child td { border-bottom: none; }
@@ -876,28 +974,19 @@ onMounted(() => {
     padding: 0 16px;
   }
 
-  .form-card {
-    padding: 1.25rem 1rem;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-  }
-
-  .form-group input, .form-group select {
-    min-height: 44px;
-  }
-
-  .form-actions {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .cancel-btn, .submit-btn {
-    width: 100%;
-    min-height: 44px;
-  }
+  .modal-card {
+      padding: 1.5rem 1rem;
+    }
+    .modern-form input, .modern-form select {
+      min-height: 44px;
+    }
+    .modal-actions {
+      flex-direction: column;
+    }
+    .btn-cancel, .btn-submit {
+      width: 100%;
+      min-height: 44px;
+    }
 
   .table-wrapper {
     overflow-x: auto;
