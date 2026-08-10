@@ -31,7 +31,8 @@ const hwForm = ref<HardwareCreate>({
 async function fetchHardware() {
   loadingHardware.value = true
   try {
-    hardwareItems.value = await getAll({ limit: 100 })
+      const response = await getAll({ limit: 100 })
+      hardwareItems.value = response.items || (Array.isArray(response) ? response : [])
   } catch (error: any) {
     toastStore.add('Failed to fetch hardware', 'error')
   } finally {

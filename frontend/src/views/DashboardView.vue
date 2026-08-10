@@ -17,7 +17,7 @@ const loading = ref(false)
 
 const page = ref(1)
 const limit = ref(10)
-const totalCount = ref(0)
+const totalCount = ref<string | number>(0)
 const hasNext = ref(false)
 
 const statusFilter = ref<string>('')
@@ -29,16 +29,16 @@ const statuses = ['Available', 'In Use', 'Repair']
 async function fetchHardware() {
   loading.value = true
   try {
-    const data = await getAll({
-      page: page.value,
-      limit: limit.value,
-      status: statusFilter.value || undefined,
-      sort_by: sortBy.value,
-      sort_order: sortOrder.value
-    })
-    items.value = data
-    totalCount.value = data.length
-    hasNext.value = data.length === limit.value
+      const response = await getAll({
+        page: page.value,
+        limit: limit.value,
+        status: statusFilter.value || undefined,
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value
+      })
+      items.value = response.items || (Array.isArray(response) ? response : [])
+      hasNext.value = response.hasNext || false
+      totalCount.value = page.value === 1 && !response.hasNext ? (response.items || items.value).length : (page.value - 1) * limit.value + (response.items || items.value).length + (response.hasNext ? '+' : '')
   } catch (error: any) {
     toastStore.add('Failed to load hardware inventory', 'error')
   } finally {
