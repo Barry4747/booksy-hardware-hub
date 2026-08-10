@@ -211,7 +211,7 @@ input:disabled {
 @media (max-width: 768px) {
   .login-container {
     padding: 0 16px;
-    max-width: 100vw;
+    max-width: 100%;
     overflow-x: hidden;
   }
 

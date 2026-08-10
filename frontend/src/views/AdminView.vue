@@ -866,6 +866,8 @@ onMounted(() => {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     white-space: nowrap;
+    width: 100%;
+    min-width: 0;
   }
   
   .tab-btn {
@@ -900,6 +902,7 @@ onMounted(() => {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     width: 100%;
+    min-width: 0;
   }
 
   table {

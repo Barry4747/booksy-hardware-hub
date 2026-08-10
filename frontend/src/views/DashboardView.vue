@@ -336,6 +336,7 @@ function goToAudit() {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     width: 100%;
+    min-width: 0;
   }
 
   table {

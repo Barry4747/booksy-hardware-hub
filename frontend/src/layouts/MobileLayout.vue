@@ -14,7 +14,7 @@ import MobileNavbar from '../components/shared/MobileNavbar.vue'
 <style scoped>
 .mobile-layout {
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   overflow-x: hidden;
 }
 

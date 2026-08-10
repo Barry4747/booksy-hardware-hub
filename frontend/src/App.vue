@@ -16,9 +16,12 @@ import AppToast from './components/shared/AppToast.vue'
   box-sizing: border-box;
 }
 
-html, body {
+html, body, #app {
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
-  max-width: 100vw;
+  margin: 0;
+  padding: 0;
 }
 
 body {
