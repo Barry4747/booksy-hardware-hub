@@ -23,15 +23,15 @@ class AuthService:
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=True,
-            samesite="strict",
+            samesite="none",  # IMPORTANT for cross-domain requests (Vercel -> Railway)
+            secure=True,     # IMPORTANT: required when samesite="none" (works only over HTTPS)
         )
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,
-            samesite="strict",
+            samesite="none",  # IMPORTANT for cross-domain requests (Vercel -> Railway)
+            secure=True,     # IMPORTANT: required when samesite="none" (works only over HTTPS)
             path="/",
         )
         
@@ -39,8 +39,8 @@ class AuthService:
         return UserResponse.model_validate(user)
 
     def logout(self, response: Response) -> None:
-        response.delete_cookie("access_token")
-        response.delete_cookie("refresh_token")
+        response.delete_cookie("access_token", samesite="none", secure=True)
+        response.delete_cookie("refresh_token", samesite="none", secure=True)
 
     def refresh(self, refresh_token: str, response: Response) -> UserResponse:
         if not refresh_token:
@@ -64,8 +64,8 @@ class AuthService:
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=True,
-            samesite="strict",
+            samesite="none",  # IMPORTANT for cross-domain requests (Vercel -> Railway)
+            secure=True,     # IMPORTANT: required when samesite="none" (works only over HTTPS)
         )
         
         return UserResponse.model_validate(user)
